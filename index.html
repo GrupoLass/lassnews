@@ -8,7 +8,7 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- Google Fonts: Bebas Neue, Instrument Serif, Space Mono, Caveat, Inter -->
+  <!-- Google Fonts: Bebas Neue, Instrument Serif, Space Mono, Caveat -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@600;700&family=Instrument+Serif:ital@0;1&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
@@ -70,13 +70,26 @@
       background-size: 4px 4px;
     }
 
-    /* Washi Tape simulation */
+    /* Wavy torn edge clipping */
+    .torn-edge-b {
+      clip-path: polygon(0% 0%, 100% 0%, 100% 93%, 95% 97%, 88% 92%, 82% 98%, 75% 94%, 68% 99%, 60% 93%, 53% 97%, 45% 92%, 38% 98%, 30% 94%, 22% 99%, 15% 93%, 8% 97%, 0% 92%);
+    }
+    .torn-edge-t {
+      clip-path: polygon(0% 7%, 8% 2%, 15% 8%, 22% 1%, 30% 7%, 38% 2%, 45% 8%, 53% 3%, 60% 8%, 68% 2%, 75% 7%, 82% 2%, 88% 7%, 95% 1%, 100% 8%, 100% 100%, 0% 100%);
+    }
+
+    /* Tape simulation */
     .washi-tape {
       background-color: rgba(245, 240, 220, 0.7);
       box-shadow: 0 1px 3px rgba(0,0,0,0.15);
       border-left: 2px dashed rgba(0,0,0,0.1);
       border-right: 2px dashed rgba(0,0,0,0.1);
       backdrop-filter: blur(1px);
+    }
+
+    /* Multiply Riso Ink Effect */
+    .riso-multiply {
+      mix-blend-mode: multiply;
     }
 
     /* Custom Scrollbar */
@@ -143,24 +156,7 @@
       transition: transform 0.5s ease-in-out, opacity 0.4s ease-in-out;
       box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
     }
-
-    /* Visual Edit Mode Highlighting */
-    body.is-editing [contenteditable="true"] {
-      outline: 2px dashed #ff2a75 !important;
-      outline-offset: 3px;
-      background-color: rgba(255, 255, 255, 0.85) !important;
-      cursor: text !important;
-      user-select: text !important;
-      border-radius: 2px;
-    }
-    body.is-editing [contenteditable="true"]:hover {
-      outline-color: #f5b000 !important;
-    }
-    body.is-editing [contenteditable="true"]:focus {
-      outline: 2px solid #00cbd6 !important;
-      background-color: #ffffff !important;
-    }
-
+    
     /* Clean Reading Mode overrides */
     .accessible-mode .paper-texture {
       background-image: none !important;
@@ -169,6 +165,7 @@
     .accessible-mode * {
       transform: none !important;
       font-family: 'Inter', sans-serif !important;
+      mix-blend-mode: normal !important;
     }
 
     /* Confetti canvas overlay */
@@ -183,27 +180,27 @@
     }
   </style>
 </head>
-<body class="min-h-screen flex flex-col justify-between items-center relative">
+<body class="min-h-screen flex flex-col justify-between items-center select-none relative">
 
   <!-- Confetti Canvas Easter Egg -->
   <canvas id="confettiCanvas"></canvas>
 
-  <!-- TOP HEADER / MAGAZINE SPINE & EDIT CONTROLS TOOLBAR -->
-  <header class="w-full bg-lassNavy text-paperOffWhite border-b-4 border-lassYellow px-4 py-2.5 sticky top-0 z-50 flex flex-wrap items-center justify-between shadow-lg gap-2">
+  <!-- TOP HEADER / MAGAZINE SPINE NAVIGATION -->
+  <header class="w-full bg-lassNavy text-paperOffWhite border-b-4 border-lassYellow px-4 py-3 sticky top-0 z-50 flex items-center justify-between shadow-md">
     
     <!-- Brand / Title -->
     <div class="flex items-center gap-3">
-      <span class="bg-lassYellow text-lassNavy font-display text-2xl px-2 py-0.5 rounded-sm font-black tracking-wider transform -rotate-2 inline-block shadow">
+      <span class="bg-lassYellow text-lassNavy font-display text-2xl px-2 py-0.5 rounded-sm font-black tracking-wider transform -rotate-2 inline-block">
         LASS NEWS
       </span>
       <div class="hidden sm:flex flex-col text-xs font-monoText">
-        <span class="font-bold text-lassYellow uppercase" id="top-bar-edition-str">Edição nº 30 • Nov/Dez 2026</span>
+        <span class="font-bold text-lassYellow uppercase">Edição nº 30 • Nov/Dez 2026</span>
         <span class="opacity-80">Especial Fim de Ano & Nossa História</span>
       </div>
     </div>
 
     <!-- Page Progress Spine Indicator -->
-    <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700 shadow-inner">
+    <div class="flex items-center gap-2 bg-slate-900/60 px-3 py-1.5 rounded-full border border-slate-700">
       <button id="prevPageBtn" onclick="changePage(-1)" class="text-lassYellow hover:text-white transition-colors p-1" title="Página Anterior (←)">
         <i class="fa-solid fa-circle-chevron-left text-lg"></i>
       </button>
@@ -219,43 +216,18 @@
       </button>
     </div>
 
-    <!-- Editor Controls & Actions Toolbar -->
+    <!-- Actions: Menu & Accessibility -->
     <div class="flex items-center gap-2">
-      <!-- Edit Mode Toggle Switch -->
-      <button id="toggleEditBtn" onclick="toggleEditMode()" class="bg-slate-800 border-2 border-slate-600 text-slate-200 font-monoText text-xs font-bold px-3 py-1.5 rounded-lg hover:border-lassYellow transition-all flex items-center gap-1.5 shadow">
-        <i class="fa-solid fa-pen-to-square text-lassYellow" id="editIcon"></i>
-        <span id="editBtnText">EDITAR: OFF</span>
-      </button>
-
-      <!-- Advanced In-Page Content Drawer Button -->
-      <button onclick="toggleDrawer()" class="bg-risoOrange text-white font-monoText text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-orange-600 transition-all flex items-center gap-1.5 shadow" title="Painel de Edição de Listas">
-        <i class="fa-solid fa-sliders"></i>
-        <span class="hidden md:inline">PAINEL</span>
-      </button>
-
-      <!-- Export / Download Updated File Button -->
-      <button onclick="downloadUpdatedHTML()" class="bg-risoGreen text-white font-monoText text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-600 transition-all flex items-center gap-1.5 shadow" title="Baixar arquivo HTML atualizado">
-        <i class="fa-solid fa-download"></i>
-        <span class="hidden sm:inline">BAIXAR EDIÇÃO</span>
-      </button>
-
-      <!-- Index Modal Button -->
-      <button onclick="toggleIndexModal()" class="bg-risoCyan text-lassNavy font-monoText text-xs font-bold px-2.5 py-1.5 rounded-lg hover:bg-white transition-all flex items-center gap-1 shadow">
+      <button onclick="toggleIndexModal()" class="bg-risoCyan text-lassNavy font-monoText text-xs font-bold px-3 py-1.5 rounded hover:bg-white transition-all flex items-center gap-1.5 shadow">
         <i class="fa-solid fa-list-ul"></i>
+        <span class="hidden md:inline">ÍNDICE</span>
       </button>
-
-      <!-- Reset to Default Button -->
-      <button onclick="resetToDefaults()" class="bg-slate-800 text-rose-400 border border-rose-900 font-monoText text-xs px-2 py-1.5 rounded-lg hover:bg-rose-950 transition-colors" title="Restaurar Padrão Original">
-        <i class="fa-solid fa-rotate-left"></i>
+      
+      <button onclick="toggleAccessibleMode()" id="accessModeBtn" class="bg-slate-800 text-slate-200 border border-slate-600 font-monoText text-xs px-2.5 py-1.5 rounded hover:bg-slate-700 transition-colors" title="Alternar Modo de Leitura Limpa">
+        <i class="fa-solid fa-universal-access text-sm"></i>
       </button>
     </div>
   </header>
-
-  <!-- EDIT MODE ALERT BANNER (Visible only when Editing is ON) -->
-  <div id="editingBanner" class="w-full bg-risoPink text-white font-monoText text-xs font-bold py-1 px-4 text-center hidden flex items-center justify-center gap-2 shadow-inner">
-    <i class="fa-solid fa-pencil animate-bounce"></i>
-    <span>MODO EDIÇÃO ATIVADO: Clique em qualquer texto da tela para alterar ou use o PAINEL para editar listas!</span>
-  </div>
 
   <!-- MAIN MAGAZINE CONTAINER -->
   <main id="magazineContainer" class="w-full max-w-7xl flex-1 my-4 px-2 sm:px-6 flex justify-center items-center relative">
@@ -285,12 +257,12 @@
         <!-- Header Bar on Cover -->
         <div class="flex justify-between items-start border-b-2 border-lassNavy pb-4 z-10">
           <div class="flex flex-col">
-            <span class="font-monoText text-xs font-bold text-risoOrange uppercase tracking-wider editable-text" id="cover-sub-header">Informativo Interno do Grupo LASS</span>
-            <span class="font-hand text-xl font-bold text-lassNavy editable-text" id="cover-target-audience">Circulação para todas as unidades</span>
+            <span class="font-monoText text-xs font-bold text-risoOrange uppercase tracking-wider">Informativo Interno do Grupo LASS</span>
+            <span class="font-hand text-xl font-bold text-lassNavy">Circulação para todas as unidades</span>
           </div>
 
           <!-- Riso Stamp Seal -->
-          <div class="bg-risoPink text-white font-display text-lg tracking-widest px-4 py-2 transform rotate-6 shadow-lg border-2 border-lassNavy animate-stamp inline-block editable-text" id="cover-stamp">
+          <div class="bg-risoPink text-white font-display text-lg tracking-widest px-4 py-2 transform rotate-6 shadow-lg border-2 border-lassNavy animate-stamp inline-block">
             EDIÇÃO Nº 30
           </div>
         </div>
@@ -301,28 +273,28 @@
           <!-- Washi Tape -->
           <div class="washi-tape absolute -top-6 left-12 w-36 h-8 transform -rotate-3 z-20"></div>
           
-          <div class="inline-block bg-lassYellow text-lassNavy font-monoText text-xs font-black uppercase tracking-widest px-3 py-1 mb-2 transform -rotate-1 border border-lassNavy editable-text" id="cover-date-tag">
+          <div class="inline-block bg-lassYellow text-lassNavy font-monoText text-xs font-black uppercase tracking-widest px-3 py-1 mb-2 transform -rotate-1 border border-lassNavy">
             NOV / DEZ 2026 • ESPECIAL DE FIM DE ANO
           </div>
 
-          <h1 class="font-display text-7xl sm:text-9xl font-black text-lassNavy leading-none tracking-tight uppercase">
-            <span class="editable-text" id="cover-title-1">LASS</span> <span class="text-risoOrange editable-text" id="cover-title-2">NEWS</span>
+          <h1 class="font-display text-7xl sm:text-9xl font-black text-lassNavy leading-none tracking-tight drop-shadow-sm uppercase">
+            LASS <span class="text-risoOrange">NEWS</span>
           </h1>
 
           <!-- Tagline -->
-          <p class="font-serifExpressive italic text-3xl sm:text-5xl text-lassNavy mt-2 leading-tight max-w-3xl editable-text" id="cover-tagline">
+          <p class="font-serifExpressive italic text-3xl sm:text-5xl text-lassNavy mt-2 leading-tight max-w-3xl">
             Nossa história, quem somos hoje e para onde vamos.
           </p>
 
           <!-- Group Companies Badges Sticker Collage -->
           <div class="mt-8 flex flex-wrap gap-2 items-center">
             <span class="text-xs font-monoText font-bold text-slate-600 uppercase mr-2">Empresas do Grupo:</span>
-            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform -rotate-2 editable-text" id="company-badge-1">SS PARTS</span>
-            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform rotate-1 editable-text" id="company-badge-2">LASS MÁQUINAS</span>
-            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform -rotate-3 editable-text" id="company-badge-3">TERRAZUL</span>
-            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform rotate-2 editable-text" id="company-badge-4">LAGROSS</span>
-            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform -rotate-1 editable-text" id="company-badge-5">SSMAC</span>
-            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform rotate-3 editable-text" id="company-badge-6">MOVILASS</span>
+            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform -rotate-2">SS PARTS</span>
+            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform rotate-1">LASS MÁQUINAS</span>
+            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform -rotate-3">TERRAZUL</span>
+            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform rotate-2">LAGROSS</span>
+            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform -rotate-1">SSMAC</span>
+            <span class="bg-white border-2 border-lassNavy text-lassNavy font-display text-sm px-2.5 py-1 rounded shadow transform rotate-3">MOVILASS</span>
           </div>
 
         </div>
@@ -334,8 +306,8 @@
               <i class="fa-solid fa-book-open"></i>
             </div>
             <div>
-              <p class="font-hand text-2xl text-lassNavy font-bold leading-none editable-text" id="cover-footer-hand">Abra e descubra as novidades!</p>
-              <p class="font-monoText text-xs text-slate-700 editable-text" id="cover-footer-sub">Feito por e para colaboradores do Grupo LASS</p>
+              <p class="font-hand text-2xl text-lassNavy font-bold leading-none">Abra e descubra as novidades!</p>
+              <p class="font-monoText text-xs text-slate-700">Feito por e para colaboradores do Grupo LASS</p>
             </div>
           </div>
 
@@ -353,8 +325,8 @@
         
         <!-- Page Header -->
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-6">
-          <span class="font-display text-3xl text-lassNavy editable-text" id="ed-header">02 // EDITORIAL DE ABERTURA</span>
-          <span class="font-monoText text-xs font-bold text-slate-600 uppercase editable-text" id="ed-edition-tag">LASS NEWS nº 30</span>
+          <span class="font-display text-3xl text-lassNavy">02 // EDITORIAL DE ABERTURA</span>
+          <span class="font-monoText text-xs font-bold text-slate-600 uppercase">LASS NEWS nº 30</span>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto">
@@ -363,27 +335,27 @@
           <div class="lg:col-span-8 bg-white/80 p-6 sm:p-8 border-2 border-lassNavy rounded shadow-[6px_6px_0px_0px_rgba(10,37,64,1)] relative">
             <div class="washi-tape absolute -top-4 right-8 w-28 h-6 transform rotate-2"></div>
             
-            <h2 class="font-display text-5xl text-lassNavy mb-2 editable-text" id="ed-title">OLÁ, TIME LASS!</h2>
-            <p class="font-serifExpressive italic text-2xl text-risoPink mb-4 editable-text" id="ed-quote">"Quem olha pra trás se orgulha; quem olha pra frente se acelera!"</p>
+            <h2 class="font-display text-5xl text-lassNavy mb-2">OLÁ, TIME LASS!</h2>
+            <p class="font-serifExpressive italic text-2xl text-risoPink mb-4">"Quem olha pra trás se orgulha; quem olha pra frente se acelera!"</p>
             
             <div class="space-y-4 font-sans text-slate-800 text-sm leading-relaxed">
-              <p class="editable-text" id="ed-paragraph-1">
+              <p>
                 Chegamos à <strong>edição nº 30 do LASS NEWS</strong>! E para marcar essa data especial de fim de ano, deixamos o PDF de lado e preparamos algo inteiramente novo: uma revista digital nativa, pensada para a tela do seu celular ou do seu computador.
               </p>
-              <p class="editable-text" id="ed-paragraph-2">
+              <p>
                 [MENSAGEM DO EDITORIAL: Espaço para texto caloroso de encerramento do ano de 2026. Agradecimento pelo empenho de todas as equipes — da oficina às vendas, do administrativo à logística de campo nas unidades do Grupo LASS.]
               </p>
-              <p class="editable-text" id="ed-paragraph-3">
+              <p>
                 Nesta edição especial, passeamos pela nossa trajetória desde <strong>[ANO DE FUNDAÇÃO]</strong>, celebramos a união das nossas empresas (SS PARTS, LASS MÁQUINAS, TERRAZUL, LAGROSS, SSMAC e MOVILASS) e projetamos os próximos passos para 2027.
               </p>
             </div>
 
             <div class="mt-6 pt-4 border-t border-slate-300 flex items-center justify-between">
               <div>
-                <p class="font-hand text-2xl text-lassNavy font-bold editable-text" id="ed-signoff">Boa leitura!</p>
-                <p class="font-monoText text-xs text-slate-500 editable-text" id="ed-author">Equipe de Comunicação & Marketing LASS</p>
+                <p class="font-hand text-2xl text-lassNavy font-bold">Boa leitura!</p>
+                <p class="font-monoText text-xs text-slate-500">Equipe de Comunicação & Marketing LASS</p>
               </div>
-              <div class="font-hand text-3xl text-risoOrange font-bold transform -rotate-6 editable-text" id="ed-hashtag">
+              <div class="font-hand text-3xl text-risoOrange font-bold transform -rotate-6">
                 #OrgulhoLASS
               </div>
             </div>
@@ -392,18 +364,18 @@
           <!-- Interactive Callout Card (Participate) -->
           <div class="lg:col-span-4 bg-lassYellow border-2 border-lassNavy p-6 rounded shadow-[6px_6px_0px_0px_rgba(10,37,64,1)] transform rotate-1 flex flex-col justify-between h-full">
             <div>
-              <div class="bg-lassNavy text-white font-monoText text-xs font-bold px-2 py-1 inline-block mb-3 editable-text" id="ed-box-badge">
+              <div class="bg-lassNavy text-white font-monoText text-xs font-bold px-2 py-1 inline-block mb-3">
                 SUA VOZ NA REVISTA
               </div>
-              <h3 class="font-display text-3xl text-lassNavy leading-none mb-3 editable-text" id="ed-box-title">QUER SUGERIR UMA PAUTA?</h3>
-              <p class="font-sans text-xs text-slate-900 mb-4 editable-text" id="ed-box-body">
+              <h3 class="font-display text-3xl text-lassNavy leading-none mb-3">QUER SUGERIR UMA PAUTA?</h3>
+              <p class="font-sans text-xs text-slate-900 mb-4">
                 Viu algo legal na sua unidade? Tem um colega para homenagear ou uma história curiosa de cliente? O LASS NEWS é feito por todos nós!
               </p>
             </div>
 
             <button onclick="openFeedbackModal()" class="w-full bg-white hover:bg-risoPink hover:text-white text-lassNavy font-display text-xl py-3 px-4 border-2 border-lassNavy rounded shadow transition-colors flex items-center justify-center gap-2">
               <i class="fa-solid fa-paper-plane"></i>
-              <span class="editable-text" id="ed-box-btn">FALE COM O RH / MARKETING</span>
+              FALE COM O RH / MARKETING
             </button>
           </div>
 
@@ -421,59 +393,67 @@
       <section id="page-3" class="page-sheet w-full paper-texture border-4 border-lassNavy rounded-lg p-6 sm:p-10 flex-col justify-between relative hidden">
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
-          <span class="font-display text-3xl text-lassNavy editable-text" id="sum-header">03 // SUMÁRIO DA EDIÇÃO</span>
-          <span class="font-hand text-2xl text-risoPink font-bold transform -rotate-3 editable-text" id="sum-sub">Clique em qualquer bloco para navegar!</span>
+          <span class="font-display text-3xl text-lassNavy">03 // SUMÁRIO DA EDIÇÃO</span>
+          <span class="font-hand text-2xl text-risoPink font-bold transform -rotate-3">Clique em qualquer bloco para navegar!</span>
         </div>
 
         <!-- Grid Map Collage -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 my-auto">
           
+          <!-- Item 1 -->
           <div onclick="goToPage(4)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-lassYellow transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassNavy text-white px-2 py-0.5 rounded">PÁG 04</span>
-            <h4 class="font-display text-2xl text-lassNavy mt-2 group-hover:underline editable-text" id="sum-item-1-title">NOSSA HISTÓRIA</h4>
-            <p class="font-sans text-xs text-slate-600 mt-1 editable-text" id="sum-item-1-desc">Linha do tempo e marcos do Grupo LASS desde a fundação.</p>
+            <h4 class="font-display text-2xl text-lassNavy mt-2 group-hover:underline">NOSSA HISTÓRIA</h4>
+            <p class="font-sans text-xs text-slate-600 mt-1">Linha do tempo e marcos do Grupo LASS desde a fundação.</p>
           </div>
 
+          <!-- Item 2 -->
           <div onclick="goToPage(5)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-risoCyan transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassNavy text-white px-2 py-0.5 rounded">PÁG 05</span>
-            <h4 class="font-display text-2xl text-lassNavy mt-2 group-hover:underline editable-text" id="sum-item-2-title">AS 6 EMPRESAS</h4>
-            <p class="font-sans text-xs text-slate-600 mt-1 editable-text" id="sum-item-2-desc">Cartões interativos colecionáveis de cada negócio.</p>
+            <h4 class="font-display text-2xl text-lassNavy mt-2 group-hover:underline">AS 6 EMPRESAS</h4>
+            <p class="font-sans text-xs text-slate-600 mt-1">Cartões interativos colecionáveis de cada negócio.</p>
           </div>
 
+          <!-- Item 3 -->
           <div onclick="goToPage(6)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-risoPink hover:text-white transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassNavy text-white px-2 py-0.5 rounded">PÁG 06</span>
-            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline editable-text" id="sum-item-3-title">GENTE LASS</h4>
-            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1 editable-text" id="sum-item-3-desc">Aniversariantes, tempo de casa e novos colegas.</p>
+            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline">GENTE LASS</h4>
+            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1">Aniversariantes, tempo de casa e novos colegas.</p>
           </div>
 
+          <!-- Item 4 -->
           <div onclick="goToPage(7)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-risoOrange hover:text-white transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassNavy text-white px-2 py-0.5 rounded">PÁG 07</span>
-            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline editable-text" id="sum-item-4-title">RADAR AGRO & MÁQUINAS</h4>
-            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1 editable-text" id="sum-item-4-desc">Notícias do setor e por que importam pra nós.</p>
+            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline">RADAR AGRO & MÁQUINAS</h4>
+            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1">Notícias do setor e por que importam pra nós.</p>
           </div>
 
+          <!-- Item 5 -->
           <div onclick="goToPage(8)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-risoGreen hover:text-white transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassNavy text-white px-2 py-0.5 rounded">PÁG 08</span>
-            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline editable-text" id="sum-item-5-title">SÓ NOTÍCIA BOA</h4>
-            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1 editable-text" id="sum-item-5-desc">Gerador interativo de boas energias e sorrisos.</p>
+            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline">SÓ NOTÍCIA BOA</h4>
+            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1">Gerador interativo de boas energias e sorrisos.</p>
           </div>
 
+          <!-- Item 6 -->
           <div onclick="goToPage(9)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-lassYellow transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassNavy text-white px-2 py-0.5 rounded">PÁG 09</span>
-            <h4 class="font-display text-2xl text-lassNavy mt-2 group-hover:underline editable-text" id="sum-item-6-title">RESPONSABILIDADE SOCIAL</h4>
-            <p class="font-sans text-xs text-slate-600 mt-1 editable-text" id="sum-item-6-desc">Campanha das Tampinhas e ações com a comunidade.</p>
+            <h4 class="font-display text-2xl text-lassNavy mt-2 group-hover:underline">RESPONSABILIDADE SOCIAL</h4>
+            <p class="font-sans text-xs text-slate-600 mt-1">Campanha das Tampinhas e ações com a comunidade.</p>
           </div>
 
+          <!-- Item 7 -->
           <div onclick="goToPage(10)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-slate-900 hover:text-white transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassYellow text-lassNavy px-2 py-0.5 rounded">PÁG 10</span>
-            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline editable-text" id="sum-item-7-title">BASTIDORES / TV VHS</h4>
-            <p class="font-sans text-xs text-slate-600 group-hover:text-slate-300 mt-1 editable-text" id="sum-item-7-desc">Vídeos retrô de depoimentos de clientes e time.</p>
+            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline">BASTIDORES / TV VHS</h4>
+            <p class="font-sans text-xs text-slate-600 group-hover:text-slate-300 mt-1">Vídeos retrô de depoimentos de clientes e time.</p>
           </div>
 
+          <!-- Item 8 -->
           <div onclick="goToPage(11)" class="cursor-pointer bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] hover:bg-risoPink hover:text-white transition-all transform hover:-translate-y-1 group">
             <span class="font-monoText text-xs font-bold bg-lassNavy text-white px-2 py-0.5 rounded">PÁG 11</span>
-            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline editable-text" id="sum-item-8-title">CONTRACAPA</h4>
-            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1 editable-text" id="sum-item-8-desc">Mensagem de Boas Festas e Easter Egg especial.</p>
+            <h4 class="font-display text-2xl text-lassNavy group-hover:text-white mt-2 group-hover:underline">CONTRACAPA</h4>
+            <p class="font-sans text-xs text-slate-600 group-hover:text-white/90 mt-1">Mensagem de Boas Festas e Easter Egg especial.</p>
           </div>
 
         </div>
@@ -491,10 +471,10 @@
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
           <div>
-            <span class="font-display text-3xl text-lassNavy editable-text" id="his-header">04 // NOSSA HISTÓRIA</span>
-            <p class="font-serifExpressive italic text-slate-700 text-lg editable-text" id="his-sub">Do primeiro galpão à força multimarcas do Agro & Construção</p>
+            <span class="font-display text-3xl text-lassNavy">04 // NOSSA HISTÓRIA</span>
+            <p class="font-serifExpressive italic text-slate-700 text-lg">Do primeiro galpão à força multimarcas do Agro & Construção</p>
           </div>
-          <span class="bg-risoOrange text-white font-monoText text-xs font-bold px-3 py-1 rounded shadow transform rotate-2 editable-text" id="his-tag">
+          <span class="bg-risoOrange text-white font-monoText text-xs font-bold px-3 py-1 rounded shadow transform rotate-2">
             DESTAQUE DA EDIÇÃO
           </span>
         </div>
@@ -502,26 +482,86 @@
         <!-- Animated Growth Counters Row -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 my-2">
           <div class="bg-white border-2 border-lassNavy p-3 text-center rounded shadow">
-            <span class="font-display text-4xl text-lassNavy block font-black editable-text" id="stat-years">+25</span>
-            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600 editable-text" id="stat-years-lbl">Anos de História</span>
+            <span class="font-display text-4xl text-lassNavy block font-black" id="counterYears">+25</span>
+            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600">Anos de História</span>
           </div>
           <div class="bg-white border-2 border-lassNavy p-3 text-center rounded shadow">
-            <span class="font-display text-4xl text-risoOrange block font-black editable-text" id="stat-units">6</span>
-            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600 editable-text" id="stat-units-lbl">Empresas / Divisões</span>
+            <span class="font-display text-4xl text-risoOrange block font-black" id="counterUnits">6</span>
+            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600">Empresas / Divisões</span>
           </div>
           <div class="bg-white border-2 border-lassNavy p-3 text-center rounded shadow">
-            <span class="font-display text-4xl text-risoCyan block font-black editable-text" id="stat-collabs">+300</span>
-            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600 editable-text" id="stat-collabs-lbl">Colaboradores</span>
+            <span class="font-display text-4xl text-risoCyan block font-black" id="counterCollabs">+300</span>
+            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600">Colaboradores</span>
           </div>
           <div class="bg-white border-2 border-lassNavy p-3 text-center rounded shadow">
-            <span class="font-display text-4xl text-risoPink block font-black editable-text" id="stat-clients">+10k</span>
-            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600 editable-text" id="stat-clients-lbl">Clientes Atendidos</span>
+            <span class="font-display text-4xl text-risoPink block font-black" id="counterClients">+10k</span>
+            <span class="font-monoText text-[10px] uppercase font-bold text-slate-600">Clientes Atendidos</span>
           </div>
         </div>
 
-        <!-- Dynamic Timeline Cards Container -->
-        <div id="timeline-container" class="my-4 overflow-x-auto pb-4 pt-2 flex gap-4 scrollbar-thin">
-          <!-- Rendered dynamically -->
+        <!-- Horizontal Timeline Scroll / Cards -->
+        <div class="my-4 overflow-x-auto pb-4 pt-2 flex gap-4 scrollbar-thin">
+          
+          <!-- Timeline Card 1 -->
+          <div class="min-w-[240px] max-w-[260px] bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] relative flex-shrink-0">
+            <div class="washi-tape absolute -top-3 left-4 w-20 h-5 transform -rotate-3"></div>
+            <span class="bg-lassYellow font-display text-2xl px-2 py-0.5 border border-lassNavy text-lassNavy">
+              [ANO 1]
+            </span>
+            <h5 class="font-display text-xl text-lassNavy mt-3">A SEMENTE INICIAL</h5>
+            <div class="w-full h-24 bg-slate-200 border border-slate-400 my-2 halftone flex items-center justify-center text-xs font-monoText text-slate-600 p-2 text-center">
+              [FOTO HISTÓRICA / ARQUIVO]
+            </div>
+            <p class="font-sans text-xs text-slate-700">
+              [HISTÓRICO: Descrição do início dos trabalhos, primeiro escritório ou oficina original do Grupo LASS.]
+            </p>
+          </div>
+
+          <!-- Timeline Card 2 -->
+          <div class="min-w-[240px] max-w-[260px] bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] relative flex-shrink-0">
+            <div class="washi-tape absolute -top-3 right-4 w-20 h-5 transform rotate-2"></div>
+            <span class="bg-risoCyan font-display text-2xl px-2 py-0.5 border border-lassNavy text-lassNavy">
+              [ANO 2]
+            </span>
+            <h5 class="font-display text-xl text-lassNavy mt-3">EXPANSÃO & PEÇAS</h5>
+            <div class="w-full h-24 bg-slate-200 border border-slate-400 my-2 halftone flex items-center justify-center text-xs font-monoText text-slate-600 p-2 text-center">
+              [FOTO SS PARTS / LASS MÁQUINAS]
+            </div>
+            <p class="font-sans text-xs text-slate-700">
+              [HISTÓRICO: Nascimento das marcas de suporte, fornecimento de peças e serviços especializados.]
+            </p>
+          </div>
+
+          <!-- Timeline Card 3 -->
+          <div class="min-w-[240px] max-w-[260px] bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] relative flex-shrink-0">
+            <div class="washi-tape absolute -top-3 left-6 w-20 h-5 transform -rotate-1"></div>
+            <span class="bg-risoPink font-display text-2xl px-2 py-0.5 border border-lassNavy text-white">
+              [ANO 3]
+            </span>
+            <h5 class="font-display text-xl text-lassNavy mt-3">FORÇA NO AGRO</h5>
+            <div class="w-full h-24 bg-slate-200 border border-slate-400 my-2 halftone flex items-center justify-center text-xs font-monoText text-slate-600 p-2 text-center">
+              [FOTO TERRAZUL / LAGROSS]
+            </div>
+            <p class="font-sans text-xs text-slate-700">
+              [HISTÓRICO: Consolidação da presença no setor agrícola regional com a Terrazul Tratores e Lagross.]
+            </p>
+          </div>
+
+          <!-- Timeline Card 4 -->
+          <div class="min-w-[240px] max-w-[260px] bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] relative flex-shrink-0">
+            <div class="washi-tape absolute -top-3 right-6 w-20 h-5 transform rotate-3"></div>
+            <span class="bg-risoGreen font-display text-2xl px-2 py-0.5 border border-lassNavy text-white">
+              2026
+            </span>
+            <h5 class="font-display text-xl text-lassNavy mt-3">GRUPO UNIFICADO</h5>
+            <div class="w-full h-24 bg-slate-200 border border-slate-400 my-2 halftone flex items-center justify-center text-xs font-monoText text-slate-600 p-2 text-center">
+              [FOTO HOJE / TIME REUNIDO]
+            </div>
+            <p class="font-sans text-xs text-slate-700">
+              Chegamos a 2026 integrando SS Parts, LASS Máquinas, Terrazul, Lagross, SSMAC e Movilass sob o mesmo propósito.
+            </p>
+          </div>
+
         </div>
 
         <div class="border-t border-slate-300 pt-4 flex justify-between items-center text-xs font-monoText text-slate-500">
@@ -537,15 +577,165 @@
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
           <div>
-            <span class="font-display text-3xl text-lassNavy editable-text" id="emp-header">05 // AS 6 EMPRESAS DO GRUPO</span>
-            <p class="font-hand text-2xl text-risoOrange font-bold editable-text" id="emp-sub">Clique em cada cartão para virar (efeito 3D)!</p>
+            <span class="font-display text-3xl text-lassNavy">05 // AS 6 EMPRESAS DO GRUPO</span>
+            <p class="font-hand text-2xl text-risoOrange font-bold">Clique em cada cartão para virar (efeito 3D)!</p>
           </div>
-          <span class="font-monoText text-xs bg-white px-2 py-1 border border-lassNavy font-bold editable-text" id="emp-badge">CARDS COLECIONÁVEIS</span>
+          <span class="font-monoText text-xs bg-white px-2 py-1 border border-lassNavy font-bold">CARDS COLECIONÁVEIS</span>
         </div>
 
-        <!-- 6 Dynamic Flip Cards Grid -->
-        <div id="companies-grid" class="grid grid-cols-2 lg:grid-cols-3 gap-4 my-auto">
-          <!-- Rendered dynamically -->
+        <!-- 6 Flip Cards Grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 my-auto">
+          
+          <!-- Card 1: SS PARTS -->
+          <div class="flip-card cursor-pointer h-44 perspective-1000" onclick="this.classList.toggle('flipped')">
+            <div class="transform-style-3d relative w-full h-full duration-500">
+              <!-- Front -->
+              <div class="absolute inset-0 backface-hidden bg-white border-2 border-lassNavy p-3 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between border-t-8 border-t-lassNavy">
+                <div class="flex justify-between items-start">
+                  <span class="font-display text-2xl text-lassNavy">SS PARTS</span>
+                  <i class="fa-solid fa-rotate text-xs text-slate-400"></i>
+                </div>
+                <p class="font-monoText text-xs text-slate-600">Peças & Componentes de Alta Performance</p>
+                <div class="bg-slate-100 border border-slate-300 text-[11px] p-1.5 font-sans">
+                  Clique para ver curiosidade! 🔄
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-lassNavy text-paperOffWhite p-3 rounded border-2 border-lassNavy flex flex-col justify-between">
+                <span class="font-monoText text-xs font-bold text-lassYellow uppercase">CURIOSIDADE #01</span>
+                <p class="font-sans text-xs leading-tight">
+                  [CURIOSIDADE SS PARTS: Exemplo de volume de peças em estoque ou atendimento expresso para o campo.]
+                </p>
+                <span class="text-[10px] font-monoText text-slate-400">Clique para voltar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: LASS MÁQUINAS -->
+          <div class="flip-card cursor-pointer h-44 perspective-1000" onclick="this.classList.toggle('flipped')">
+            <div class="transform-style-3d relative w-full h-full duration-500">
+              <!-- Front -->
+              <div class="absolute inset-0 backface-hidden bg-white border-2 border-lassNavy p-3 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between border-t-8 border-t-lassYellow">
+                <div class="flex justify-between items-start">
+                  <span class="font-display text-2xl text-lassNavy">LASS MÁQUINAS</span>
+                  <i class="fa-solid fa-rotate text-xs text-slate-400"></i>
+                </div>
+                <p class="font-monoText text-xs text-slate-600">Soluções Pesadas & Equipamentos</p>
+                <div class="bg-slate-100 border border-slate-300 text-[11px] p-1.5 font-sans">
+                  Clique para ver curiosidade! 🔄
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-lassYellow text-lassNavy p-3 rounded border-2 border-lassNavy flex flex-col justify-between">
+                <span class="font-monoText text-xs font-bold uppercase">CURIOSIDADE #02</span>
+                <p class="font-sans text-xs leading-tight font-medium">
+                  [CURIOSIDADE LASS MÁQUINAS: Detalhes das maiores máquinas comercializadas e suporte de campo.]
+                </p>
+                <span class="text-[10px] font-monoText text-slate-800">Clique para voltar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: TERRAZUL TRATORES -->
+          <div class="flip-card cursor-pointer h-44 perspective-1000" onclick="this.classList.toggle('flipped')">
+            <div class="transform-style-3d relative w-full h-full duration-500">
+              <!-- Front -->
+              <div class="absolute inset-0 backface-hidden bg-white border-2 border-lassNavy p-3 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between border-t-8 border-t-risoCyan">
+                <div class="flex justify-between items-start">
+                  <span class="font-display text-2xl text-lassNavy">TERRAZUL</span>
+                  <i class="fa-solid fa-rotate text-xs text-slate-400"></i>
+                </div>
+                <p class="font-monoText text-xs text-slate-600">Tratores & Tecnologia Agrícola</p>
+                <div class="bg-slate-100 border border-slate-300 text-[11px] p-1.5 font-sans">
+                  Clique para ver curiosidade! 🔄
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-risoCyan text-lassNavy p-3 rounded border-2 border-lassNavy flex flex-col justify-between">
+                <span class="font-monoText text-xs font-bold uppercase">CURIOSIDADE #03</span>
+                <p class="font-sans text-xs leading-tight font-medium">
+                  [CURIOSIDADE TERRAZUL: Tradição no atendimento a produtores rurais e tecnologia no campo.]
+                </p>
+                <span class="text-[10px] font-monoText text-slate-800">Clique para voltar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 4: LAGROSS MÁQUINAS -->
+          <div class="flip-card cursor-pointer h-44 perspective-1000" onclick="this.classList.toggle('flipped')">
+            <div class="transform-style-3d relative w-full h-full duration-500">
+              <!-- Front -->
+              <div class="absolute inset-0 backface-hidden bg-white border-2 border-lassNavy p-3 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between border-t-8 border-t-risoPink">
+                <div class="flex justify-between items-start">
+                  <span class="font-display text-2xl text-lassNavy">LAGROSS</span>
+                  <i class="fa-solid fa-rotate text-xs text-slate-400"></i>
+                </div>
+                <p class="font-monoText text-xs text-slate-600">Concessionária & Implementos</p>
+                <div class="bg-slate-100 border border-slate-300 text-[11px] p-1.5 font-sans">
+                  Clique para ver curiosidade! 🔄
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-risoPink text-white p-3 rounded border-2 border-lassNavy flex flex-col justify-between">
+                <span class="font-monoText text-xs font-bold uppercase text-lassYellow">CURIOSIDADE #04</span>
+                <p class="font-sans text-xs leading-tight">
+                  [CURIOSIDADE LAGROSS: Parcerias de destaque e depoimentos de clientes da região.]
+                </p>
+                <span class="text-[10px] font-monoText text-slate-200">Clique para voltar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 5: SSMAC -->
+          <div class="flip-card cursor-pointer h-44 perspective-1000" onclick="this.classList.toggle('flipped')">
+            <div class="transform-style-3d relative w-full h-full duration-500">
+              <!-- Front -->
+              <div class="absolute inset-0 backface-hidden bg-white border-2 border-lassNavy p-3 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between border-t-8 border-t-risoOrange">
+                <div class="flex justify-between items-start">
+                  <span class="font-display text-2xl text-lassNavy">SSMAC</span>
+                  <i class="fa-solid fa-rotate text-xs text-slate-400"></i>
+                </div>
+                <p class="font-monoText text-xs text-slate-600">Engenharia & Soluções Técnicas</p>
+                <div class="bg-slate-100 border border-slate-300 text-[11px] p-1.5 font-sans">
+                  Clique para ver curiosidade! 🔄
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-risoOrange text-white p-3 rounded border-2 border-lassNavy flex flex-col justify-between">
+                <span class="font-monoText text-xs font-bold uppercase text-lassYellow">CURIOSIDADE #05</span>
+                <p class="font-sans text-xs leading-tight">
+                  [CURIOSIDADE SSMAC: Foco em segurança, manutenção pesada e especializações técnicas.]
+                </p>
+                <span class="text-[10px] font-monoText text-slate-200">Clique para voltar</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 6: MOVILASS -->
+          <div class="flip-card cursor-pointer h-44 perspective-1000" onclick="this.classList.toggle('flipped')">
+            <div class="transform-style-3d relative w-full h-full duration-500">
+              <!-- Front -->
+              <div class="absolute inset-0 backface-hidden bg-white border-2 border-lassNavy p-3 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between border-t-8 border-t-risoGreen">
+                <div class="flex justify-between items-start">
+                  <span class="font-display text-2xl text-lassNavy">MOVILASS</span>
+                  <i class="fa-solid fa-rotate text-xs text-slate-400"></i>
+                </div>
+                <p class="font-monoText text-xs text-slate-600">Movimentação & Logística Integrada</p>
+                <div class="bg-slate-100 border border-slate-300 text-[11px] p-1.5 font-sans">
+                  Clique para ver curiosidade! 🔄
+                </div>
+              </div>
+              <!-- Back -->
+              <div class="absolute inset-0 backface-hidden rotate-y-180 bg-risoGreen text-white p-3 rounded border-2 border-lassNavy flex flex-col justify-between">
+                <span class="font-monoText text-xs font-bold uppercase text-lassYellow">CURIOSIDADE #06</span>
+                <p class="font-sans text-xs leading-tight">
+                  [CURIOSIDADE MOVILASS: Eficiência no transporte de equipamentos e agilidade na entrega.]
+                </p>
+                <span class="text-[10px] font-monoText text-slate-200">Clique para voltar</span>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <div class="border-t border-slate-300 pt-4 flex justify-between items-center text-xs font-monoText text-slate-500">
@@ -561,10 +751,10 @@
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
           <div>
-            <span class="font-display text-3xl text-lassNavy editable-text" id="g-header">06 // GENTE LASS</span>
-            <span class="font-hand text-2xl text-risoPink font-bold ml-2 editable-text" id="g-sub">Nossa maior força!</span>
+            <span class="font-display text-3xl text-lassNavy">06 // GENTE LASS</span>
+            <span class="font-hand text-2xl text-risoPink font-bold ml-2">Nossa maior força!</span>
           </div>
-          <span class="bg-lassYellow border border-lassNavy font-monoText text-xs font-bold px-2 py-1 editable-text" id="g-badge">MURAL DA TURMA</span>
+          <span class="bg-lassYellow border border-lassNavy font-monoText text-xs font-bold px-2 py-1">MURAL DA TURMA</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-12 gap-6 my-auto">
@@ -574,13 +764,61 @@
             <div class="washi-tape absolute -top-3 left-8 w-24 h-5 transform -rotate-2"></div>
             
             <h4 class="font-display text-2xl text-lassNavy border-b border-slate-300 pb-1 mb-3 flex items-center justify-between">
-              <span class="editable-text" id="bday-title">🎂 ANIVERSARIANTES DE NOV / DEZ</span>
-              <span class="font-hand text-lg text-risoOrange font-bold editable-text" id="bday-sub font-bold">Parabéns!</span>
+              <span>🎂 ANIVERSARIANTES DE NOV / DEZ</span>
+              <span class="font-hand text-lg text-risoOrange font-bold">Parabéns!</span>
             </h4>
 
             <!-- Polaroid Photo Collage Layout -->
-            <div id="birthdays-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <!-- Rendered dynamically -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              
+              <div class="bg-paperOffWhite border border-slate-300 p-2 shadow transform -rotate-2 hover:rotate-0 transition-transform">
+                <div class="w-full h-16 bg-slate-300 border border-slate-400 halftone flex items-center justify-center font-monoText text-[10px]">
+                  [FOTO]
+                </div>
+                <p class="font-hand text-lg text-center font-bold text-lassNavy mt-1 leading-tight">[NOME]</p>
+                <p class="font-monoText text-[9px] text-center text-slate-500">SS Parts • [DIA/NOV]</p>
+              </div>
+
+              <div class="bg-paperOffWhite border border-slate-300 p-2 shadow transform rotate-3 hover:rotate-0 transition-transform">
+                <div class="w-full h-16 bg-slate-300 border border-slate-400 halftone flex items-center justify-center font-monoText text-[10px]">
+                  [FOTO]
+                </div>
+                <p class="font-hand text-lg text-center font-bold text-lassNavy mt-1 leading-tight">[NOME]</p>
+                <p class="font-monoText text-[9px] text-center text-slate-500">Terrazul • [DIA/NOV]</p>
+              </div>
+
+              <div class="bg-paperOffWhite border border-slate-300 p-2 shadow transform -rotate-3 hover:rotate-0 transition-transform">
+                <div class="w-full h-16 bg-slate-300 border border-slate-400 halftone flex items-center justify-center font-monoText text-[10px]">
+                  [FOTO]
+                </div>
+                <p class="font-hand text-lg text-center font-bold text-lassNavy mt-1 leading-tight">[NOME]</p>
+                <p class="font-monoText text-[9px] text-center text-slate-500">Lagross • [DIA/DEZ]</p>
+              </div>
+
+              <div class="bg-paperOffWhite border border-slate-300 p-2 shadow transform rotate-1 hover:rotate-0 transition-transform">
+                <div class="w-full h-16 bg-slate-300 border border-slate-400 halftone flex items-center justify-center font-monoText text-[10px]">
+                  [FOTO]
+                </div>
+                <p class="font-hand text-lg text-center font-bold text-lassNavy mt-1 leading-tight">[NOME]</p>
+                <p class="font-monoText text-[9px] text-center text-slate-500">SSMAC • [DIA/DEZ]</p>
+              </div>
+
+              <div class="bg-paperOffWhite border border-slate-300 p-2 shadow transform -rotate-1 hover:rotate-0 transition-transform">
+                <div class="w-full h-16 bg-slate-300 border border-slate-400 halftone flex items-center justify-center font-monoText text-[10px]">
+                  [FOTO]
+                </div>
+                <p class="font-hand text-lg text-center font-bold text-lassNavy mt-1 leading-tight">[NOME]</p>
+                <p class="font-monoText text-[9px] text-center text-slate-500">Movilass • [DIA/DEZ]</p>
+              </div>
+
+              <div class="bg-paperOffWhite border border-slate-300 p-2 shadow transform rotate-2 hover:rotate-0 transition-transform">
+                <div class="w-full h-16 bg-slate-300 border border-slate-400 halftone flex items-center justify-center font-monoText text-[10px]">
+                  [FOTO]
+                </div>
+                <p class="font-hand text-lg text-center font-bold text-lassNavy mt-1 leading-tight">[NOME]</p>
+                <p class="font-monoText text-[9px] text-center text-slate-500">LASS Máq • [DIA/DEZ]</p>
+              </div>
+
             </div>
           </div>
 
@@ -589,21 +827,31 @@
             
             <!-- Newcomers -->
             <div class="bg-risoCyan/10 border-2 border-lassNavy p-4 rounded shadow relative">
-              <h4 class="font-display text-xl text-lassNavy border-b border-lassNavy/20 pb-1 mb-2 editable-text" id="new-title">
+              <h4 class="font-display text-xl text-lassNavy border-b border-lassNavy/20 pb-1 mb-2">
                 🌱 O TIME ESTÁ CRESCENDO (BEM-VINDOS!)
               </h4>
-              <ul id="newcomers-list" class="space-y-1.5 font-sans text-xs text-slate-800">
-                <!-- Rendered dynamically -->
+              <ul class="space-y-1.5 font-sans text-xs text-slate-800">
+                <li class="flex justify-between border-b border-slate-200 pb-1">
+                  <span><strong>[NOME NOVO COLABORADOR]</strong> — [CARGO]</span>
+                  <span class="font-monoText text-[10px] bg-white px-1 border">[UNIDADE]</span>
+                </li>
+                <li class="flex justify-between border-b border-slate-200 pb-1">
+                  <span><strong>[NOME NOVO COLABORADOR]</strong> — [CARGO]</span>
+                  <span class="font-monoText text-[10px] bg-white px-1 border">[UNIDADE]</span>
+                </li>
               </ul>
             </div>
 
             <!-- Milestones / Homenagens -->
             <div class="bg-lassYellow/20 border-2 border-lassNavy p-4 rounded shadow relative">
-              <h4 class="font-display text-xl text-lassNavy border-b border-lassNavy/20 pb-1 mb-2 editable-text" id="time-title">
+              <h4 class="font-display text-xl text-lassNavy border-b border-lassNavy/20 pb-1 mb-2">
                 🏅 TEMPO DE EMPRESA (RECONHECIMENTO)
               </h4>
-              <div id="milestones-list" class="space-y-2 font-sans text-xs text-slate-800">
-                <!-- Rendered dynamically -->
+              <div class="space-y-2 font-sans text-xs text-slate-800">
+                <div class="bg-white p-2 border border-lassNavy rounded">
+                  <p class="font-bold text-lassNavy">[NOME COLABORADOR HOMENAGEADO]</p>
+                  <p class="text-[11px] text-slate-600">Completando <strong>[X] ANOS</strong> de dedicação e história na <strong>[EMPRESA]</strong>!</p>
+                </div>
               </div>
             </div>
 
@@ -624,14 +872,58 @@
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
           <div>
-            <span class="font-display text-3xl text-lassNavy editable-text" id="radar-header">07 // RADAR AGRO & CONSTRUÇÃO</span>
-            <p class="font-serifExpressive italic text-slate-700 text-lg editable-text" id="radar-sub">Notícias do setor que movimentam o nosso mercado</p>
+            <span class="font-display text-3xl text-lassNavy">07 // RADAR AGRO & CONSTRUÇÃO</span>
+            <p class="font-serifExpressive italic text-slate-700 text-lg">Notícias do setor que movimentam o nosso mercado</p>
           </div>
-          <span class="bg-risoOrange text-white font-monoText text-xs font-bold px-2.5 py-1 rounded editable-text" id="radar-tag">MERCADO & TENDÊNCIAS</span>
+          <span class="bg-risoOrange text-white font-monoText text-xs font-bold px-2.5 py-1 rounded">MERCADO & TENDÊNCIAS</span>
         </div>
 
-        <div id="radar-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 my-auto">
-          <!-- Rendered dynamically -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 my-auto">
+          
+          <!-- News Card 1 -->
+          <div class="bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center text-[10px] font-monoText text-slate-500 border-b border-slate-200 pb-1 mb-2">
+                <span>FONTE: [NOME DA FONTE]</span>
+                <span>[DATA RECENTE 2026]</span>
+              </div>
+              <h4 class="font-display text-2xl text-lassNavy leading-tight mb-2">
+                [MANCHETE 1: PERSPECTIVAS DA SAFRA E MECANIZAÇÃO]
+              </h4>
+              <p class="font-sans text-xs text-slate-700 mb-3">
+                [RESUMO DA NOTÍCIA: Relatório aponta alta na demanda por máquinas agrícolas de alta precisão e peças de reposição rápida para o encerramento do ano.]
+              </p>
+            </div>
+            <div class="bg-risoCyan/20 border-l-4 border-risoCyan p-2 rounded-r">
+              <span class="font-monoText text-[10px] font-bold text-lassNavy uppercase block">POR QUE ISSO IMPORTA PRA LASS?</span>
+              <p class="font-sans text-xs font-medium text-slate-900">
+                [EXPLICAÇÃO EM 1 LINHA: Prepara nossas equipes de suporte e estoque para garantir agilidade total no atendimento ao produtor.]
+              </p>
+            </div>
+          </div>
+
+          <!-- News Card 2 -->
+          <div class="bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-center text-[10px] font-monoText text-slate-500 border-b border-slate-200 pb-1 mb-2">
+                <span>FONTE: [NOME DA FONTE]</span>
+                <span>[DATA RECENTE 2026]</span>
+              </div>
+              <h4 class="font-display text-2xl text-lassNavy leading-tight mb-2">
+                [MANCHETE 2: INFRAESTRUTURA E MÁQUINAS PESADAS]
+              </h4>
+              <p class="font-sans text-xs text-slate-700 mb-3">
+                [RESUMO DA NOTÍCIA: Investimentos em obras regionais impulsionam locação e venda de maquinário de linha amarela.]
+              </p>
+            </div>
+            <div class="bg-lassYellow/30 border-l-4 border-lassYellow p-2 rounded-r">
+              <span class="font-monoText text-[10px] font-bold text-lassNavy uppercase block">POR QUE ISSO IMPORTA PRA LASS?</span>
+              <p class="font-sans text-xs font-medium text-slate-900">
+                [EXPLICAÇÃO EM 1 LINHA: Fortalece o posicionamento da LASS Máquinas e Movilass em grandes obras locais.]
+              </p>
+            </div>
+          </div>
+
         </div>
 
         <div class="border-t border-slate-300 pt-4 flex justify-between items-center text-xs font-monoText text-slate-500">
@@ -647,10 +939,10 @@
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
           <div>
-            <span class="font-display text-3xl text-lassNavy editable-text" id="gn-header">08 // SÓ NOTÍCIA BOA! ☀️</span>
-            <p class="font-hand text-2xl text-risoGreen font-bold editable-text" id="gn-sub">Aquelas histórias que acendem o dia!</p>
+            <span class="font-display text-3xl text-lassNavy">08 // SÓ NOTÍCIA BOA! ☀️</span>
+            <p class="font-hand text-2xl text-risoGreen font-bold">Aquelas histórias que acendem o dia!</p>
           </div>
-          <span class="bg-risoGreen text-white font-monoText text-xs font-bold px-3 py-1 rounded editable-text" id="gn-tag">BOAS ENERGIAS</span>
+          <span class="bg-risoGreen text-white font-monoText text-xs font-bold px-3 py-1 rounded">BOAS ENERGIAS</span>
         </div>
 
         <!-- Interactive Good News Generator Box -->
@@ -658,15 +950,15 @@
           
           <div class="washi-tape absolute -top-4 left-1/2 transform -translate-x-1/2 w-36 h-6"></div>
 
-          <span id="goodNewsCategory" class="bg-risoPink text-white font-monoText text-xs font-bold px-3 py-1 rounded uppercase tracking-wider editable-text">
+          <span id="goodNewsCategory" class="bg-risoPink text-white font-monoText text-xs font-bold px-3 py-1 rounded uppercase tracking-wider">
             HISTÓRIA INSPIRADORA
           </span>
 
-          <h3 id="goodNewsTitle" class="font-display text-4xl text-lassNavy my-4 leading-tight editable-text">
+          <h3 id="goodNewsTitle" class="font-display text-4xl text-lassNavy my-4 leading-tight">
             "PROJETO COMUNITÁRIO REFLORESTA ÁREAS RURAIS COM AJUDA DE VOLUNTÁRIOS"
           </h3>
 
-          <p id="goodNewsBody" class="font-sans text-sm text-slate-700 leading-relaxed mb-6 editable-text">
+          <p id="goodNewsBody" class="font-sans text-sm text-slate-700 leading-relaxed mb-6">
             Iniciativa regional distribuiu milhares de mudas nativas para produtores rurais reforçarem nascentes e áreas de preservação permanente no interior!
           </p>
 
@@ -689,10 +981,10 @@
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
           <div>
-            <span class="font-display text-3xl text-lassNavy editable-text" id="soc-header">09 // AÇÕES SOCIAIS & COMUNIDADE</span>
-            <p class="font-serifExpressive italic text-slate-700 text-lg editable-text" id="soc-sub">Fazendo a diferença juntos dentro e fora das nossas empresas</p>
+            <span class="font-display text-3xl text-lassNavy">09 // AÇÕES SOCIAIS & COMUNIDADE</span>
+            <p class="font-serifExpressive italic text-slate-700 text-lg">Fazendo a diferença juntos dentro e fora das nossas empresas</p>
           </div>
-          <span class="bg-risoPink text-white font-monoText text-xs font-bold px-2 py-1 editable-text" id="soc-tag">IMPACTO POSITIVO</span>
+          <span class="bg-risoPink text-white font-monoText text-xs font-bold px-2 py-1">IMPACTO POSITIVO</span>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-auto">
@@ -701,28 +993,28 @@
           <div class="bg-white border-2 border-lassNavy p-5 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] relative flex flex-col justify-between">
             <div>
               <div class="flex justify-between items-start mb-2">
-                <h4 class="font-display text-3xl text-lassNavy editable-text" id="tamp-title">CAMPANHA DAS TAMPINHAS ♻️</h4>
-                <span class="bg-lassYellow text-lassNavy font-monoText text-xs font-bold px-2 py-0.5 border border-lassNavy editable-text" id="tamp-badge">
+                <h4 class="font-display text-3xl text-lassNavy">CAMPANHA DAS TAMPINHAS ♻️</h4>
+                <span class="bg-lassYellow text-lassNavy font-monoText text-xs font-bold px-2 py-0.5 border border-lassNavy">
                   MASCOTE LASS
                 </span>
               </div>
-              <p class="font-sans text-xs text-slate-700 mb-3 editable-text" id="tamp-body">
+              <p class="font-sans text-xs text-slate-700 mb-3">
                 Continuamos arrecadando tampinhas plásticas em todas as recepções e refeitórios das empresas do Grupo! Toda a arrecadação é convertida em doações para causas sociais parceiras.
               </p>
               
               <!-- Progress Meter -->
               <div class="bg-slate-100 p-3 border border-slate-300 rounded mb-2">
                 <div class="flex justify-between font-monoText text-xs font-bold text-lassNavy mb-1">
-                  <span class="editable-text" id="tamp-meta">META ANUAL: [X] KG</span>
-                  <span class="text-risoGreen editable-text" id="tamp-pct">85% CONCLUÍDO!</span>
+                  <span>META ANUAL: [X] KG</span>
+                  <span class="text-risoGreen">85% CONCLUÍDO!</span>
                 </div>
                 <div class="w-full bg-slate-300 h-4 rounded-full overflow-hidden border border-slate-400">
-                  <div id="tamp-bar" class="bg-risoGreen h-full w-[85%]"></div>
+                  <div class="bg-risoGreen h-full w-[85%]"></div>
                 </div>
               </div>
             </div>
 
-            <p class="font-hand text-xl text-risoOrange font-bold editable-text" id="tamp-quote">
+            <p class="font-hand text-xl text-risoOrange font-bold">
               "Traga suas tampinhas de casa e ajude a bater nossa meta!"
             </p>
           </div>
@@ -730,18 +1022,18 @@
           <!-- Casa dos Meninos Feature -->
           <div class="bg-white border-2 border-lassNavy p-5 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between">
             <div>
-              <h4 class="font-display text-3xl text-lassNavy mb-2 editable-text" id="casa-title">
+              <h4 class="font-display text-3xl text-lassNavy mb-2">
                 VISITA: CASA DOS MENINOS DE TIETÊ 🤝
               </h4>
-              <div class="w-full h-28 bg-slate-200 border border-slate-400 my-2 halftone flex items-center justify-center font-monoText text-xs text-slate-600 p-2 text-center editable-text" id="casa-photo-label">
+              <div class="w-full h-28 bg-slate-200 border border-slate-400 my-2 halftone flex items-center justify-center font-monoText text-xs text-slate-600 p-2 text-center">
                 [FOTO DA VISITA / REUNIAO COM AS CRIANÇAS]
               </div>
-              <p class="font-sans text-xs text-slate-700 editable-text" id="casa-body">
+              <p class="font-sans text-xs text-slate-700">
                 [REGISTRO DA AÇÃO: Detalhes da visita especial da equipe, entrega de mantimentos ou atividades integrativas realizadas com as crianças da instituição parceira.]
               </p>
             </div>
 
-            <span class="font-monoText text-[10px] text-slate-500 block mt-2 border-t border-slate-200 pt-2 editable-text" id="casa-footer">
+            <span class="font-monoText text-[10px] text-slate-500 block mt-2 border-t border-slate-200 pt-2">
               Juntos transformamos nossa região com atitudes concretas.
             </span>
           </div>
@@ -761,8 +1053,8 @@
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
           <div>
-            <span class="font-display text-3xl text-lassNavy editable-text" id="vhs-header">10 // BASTIDORES & VÍDEOS DE CLIENTES</span>
-            <p class="font-monoText text-xs text-slate-600 editable-text" id="vhs-sub">TV LASS • GRAVAÇÃO DE CAMPO</p>
+            <span class="font-display text-3xl text-lassNavy">10 // BASTIDORES & VÍDEOS DE CLIENTES</span>
+            <p class="font-monoText text-xs text-slate-600">TV LASS • GRAVAÇÃO DE CAMPO</p>
           </div>
           <span class="bg-slate-900 text-lassYellow font-monoText text-xs font-bold px-3 py-1 rounded flex items-center gap-1.5">
             <i class="fa-solid fa-tape"></i> VHS VINTAGE
@@ -777,7 +1069,7 @@
             
             <!-- Video Overlay Controls & VHS Indicator -->
             <div class="flex justify-between items-start text-green-400 font-monoText text-xs z-20">
-              <span class="bg-black/60 px-2 py-0.5 rounded">PLAY <span id="vhsTime">▶ 00:02:45</span></span>
+              <span class="bg-black/60 px-2 py-0.5 rounded">PLAY <span>▶ 00:02:45</span></span>
               <span class="bg-red-600 text-white font-bold px-2 py-0.5 rounded animate-pulse">● REC</span>
             </div>
 
@@ -786,17 +1078,17 @@
               <div class="w-16 h-16 rounded-full bg-lassYellow/90 hover:bg-white text-lassNavy border-2 border-black mx-auto flex items-center justify-center cursor-pointer shadow-lg transition-transform transform hover:scale-110 mb-2" onclick="toggleVhsPlayback()">
                 <i id="vhsPlayIcon" class="fa-solid fa-play text-2xl ml-1"></i>
               </div>
-              <h4 id="vhsVideoTitle" class="font-display text-2xl text-white tracking-wide editable-text">
+              <h4 id="vhsVideoTitle" class="font-display text-2xl text-white tracking-wide">
                 DEPOIMENTO: CLIENTE LAGROSS NO CAMPO
               </h4>
-              <p id="vhsVideoSub" class="font-monoText text-xs text-slate-300 editable-text">
+              <p id="vhsVideoSub" class="font-monoText text-xs text-slate-300">
                 "Confiança nas máquinas e agilidade no atendimento de peças"
               </p>
             </div>
 
             <!-- Tape Footer Stamp -->
             <div class="flex justify-between items-end font-monoText text-[10px] text-slate-400 z-20">
-              <span id="vhsTapeLabel" class="editable-text">TAPE: LASS_CLIENTES_2026.VHS</span>
+              <span>TAPE: LASS_CLIENTES_2026.VHS</span>
               <span>HQ STEREO</span>
             </div>
           </div>
@@ -811,7 +1103,7 @@
                 MUDAR CANAL 📺
               </button>
             </div>
-            <span id="vhsChannelDisplay" class="font-monoText text-xs text-lassYellow font-bold">CANAL 01</span>
+            <span class="font-monoText text-xs text-lassYellow font-bold">CANAL 03</span>
           </div>
 
         </div>
@@ -828,27 +1120,27 @@
       <section id="page-11" class="page-sheet w-full paper-texture border-4 border-lassNavy rounded-lg p-6 sm:p-10 flex-col justify-between relative hidden">
         
         <div class="flex justify-between items-center border-b-2 border-lassNavy pb-3 mb-4">
-          <span class="font-display text-3xl text-lassNavy editable-text" id="back-header">11 // CONTRACAPA & BOAS FESTAS</span>
-          <span class="bg-lassYellow border border-lassNavy font-monoText text-xs font-bold px-3 py-1 editable-text" id="back-badge">ATÉ 2027!</span>
+          <span class="font-display text-3xl text-lassNavy">11 // CONTRACAPA & BOAS FESTAS</span>
+          <span class="bg-lassYellow border border-lassNavy font-monoText text-xs font-bold px-3 py-1">ATÉ 2027!</span>
         </div>
 
         <div class="my-auto text-center max-w-2xl mx-auto space-y-6">
           
-          <div class="inline-block bg-risoPink text-white font-display text-2xl px-6 py-2 transform -rotate-2 border-2 border-lassNavy shadow-lg editable-text" id="back-banner">
+          <div class="inline-block bg-risoPink text-white font-display text-2xl px-6 py-2 transform -rotate-2 border-2 border-lassNavy shadow-lg">
             MUITO OBRIGADO A TODO O TIME LASS!
           </div>
 
-          <h2 class="font-display text-6xl sm:text-7xl text-lassNavy leading-none editable-text" id="back-title">
+          <h2 class="font-display text-6xl sm:text-7xl text-lassNavy leading-none">
             UM FELIZ NATAL E UM 2027 REPLETO DE CONQUISTAS!
           </h2>
 
-          <p class="font-serifExpressive italic text-2xl text-slate-800 editable-text" id="back-quote">
+          <p class="font-serifExpressive italic text-2xl text-slate-800">
             "Que o próximo ano traga ainda mais força, trabalho em equipe e orgulho da nossa trajetória."
           </p>
 
           <div class="p-6 bg-white border-2 border-lassNavy rounded-lg shadow-[6px_6px_0px_0px_rgba(10,37,64,1)] text-left">
-            <h4 class="font-display text-2xl text-lassNavy mb-2 editable-text" id="back-box-title">QUER SUGERIR MATÉRIAS PARA A EDIÇÃO #31?</h4>
-            <p class="font-sans text-xs text-slate-700 mb-3 editable-text" id="back-box-sub">
+            <h4 class="font-display text-2xl text-lassNavy mb-2">QUER SUGERIR MATÉRIAS PARA A EDIÇÃO #31?</h4>
+            <p class="font-sans text-xs text-slate-700 mb-3">
               Envie sua foto de equipe, sugestão de melhoria ou conquista local para o nosso time de Marketing.
             </p>
             <div class="flex flex-col sm:flex-row gap-3">
@@ -859,6 +1151,7 @@
             </div>
           </div>
 
+          <!-- Trigger Confetti manually button -->
           <div>
             <button onclick="triggerConfetti()" class="bg-risoCyan text-lassNavy font-display text-2xl px-6 py-2 rounded border-2 border-lassNavy hover:bg-lassYellow transition-all shadow transform hover:scale-105">
               🎉 CELEBRAR COM CONFETES!
@@ -868,7 +1161,7 @@
         </div>
 
         <div class="border-t-4 border-lassNavy pt-4 flex justify-between items-center text-xs font-monoText text-slate-600">
-          <span class="editable-text" id="back-footer-str">LASS NEWS nº 30 • Grupo LASS (SS Parts, LASS Máquinas, Terrazul, Lagross, SSMAC, Movilass)</span>
+          <span>LASS NEWS nº 30 • Grupo LASS (SS Parts, LASS Máquinas, Terrazul, Lagross, SSMAC, Movilass)</span>
           <span>FIM</span>
         </div>
       </section>
@@ -876,11 +1169,11 @@
     </div>
   </main>
 
-  <!-- BOTTOM NAVIGATION BAR -->
+  <!-- BOTTOM NAVIGATION BAR / SWIPE INSTRUCTION -->
   <footer class="w-full bg-slate-900 text-slate-400 py-3 px-4 text-center font-monoText text-xs border-t border-slate-800">
     <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
-      <span>Dica: Use as setas do teclado (← →) ou ative o Modo Edição no topo para personalizar!</span>
-      <span class="text-lassYellow font-bold" id="footer-edition-str">Edição Especial de Fim de Ano (2026)</span>
+      <span>Dica: Use as setas do teclado (← →) ou deslize o dedo na tela para folhear.</span>
+      <span class="text-lassYellow font-bold">Edição Especial de Fim de Ano (2026)</span>
     </div>
   </footer>
 
@@ -930,137 +1223,15 @@
     </div>
   </div>
 
-  <!-- DRAWER / EDITING PANEL (PAINEL DE ALIMENTAÇÃO DA REVISTA) -->
-  <div id="editDrawer" class="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-paperOffWhite border-l-4 border-lassNavy z-50 transform translate-x-full transition-transform duration-300 shadow-2xl flex flex-col justify-between">
-    
-    <div class="p-4 bg-lassNavy text-white flex justify-between items-center border-b-4 border-lassYellow">
-      <div class="flex items-center gap-2">
-        <i class="fa-solid fa-sliders text-lassYellow"></i>
-        <h3 class="font-display text-2xl text-white">PAINEL DE DADOS DA REVISTA</h3>
-      </div>
-      <button onclick="toggleDrawer()" class="text-white hover:text-lassYellow text-2xl">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-    </div>
-
-    <!-- Drawer Body Navigation Tabs -->
-    <div class="flex border-b border-slate-300 bg-slate-200 font-monoText text-xs font-bold overflow-x-auto">
-      <button onclick="switchDrawerTab('tab-timeline')" class="px-3 py-2 border-r border-slate-300 hover:bg-white focus:bg-white text-lassNavy">História</button>
-      <button onclick="switchDrawerTab('tab-companies')" class="px-3 py-2 border-r border-slate-300 hover:bg-white focus:bg-white text-lassNavy">Empresas</button>
-      <button onclick="switchDrawerTab('tab-bday')" class="px-3 py-2 border-r border-slate-300 hover:bg-white focus:bg-white text-lassNavy">Equipe</button>
-      <button onclick="switchDrawerTab('tab-radar')" class="px-3 py-2 border-r border-slate-300 hover:bg-white focus:bg-white text-lassNavy">Radar</button>
-      <button onclick="switchDrawerTab('tab-vhs')" class="px-3 py-2 hover:bg-white focus:bg-white text-lassNavy">VHS</button>
-    </div>
-
-    <!-- Tab Contents Container -->
-    <div class="p-4 flex-1 overflow-y-auto space-y-4 font-sans text-xs" id="drawerContent">
-      
-      <!-- TAB HISTÓRIA -->
-      <div id="tab-timeline" class="drawer-tab-pane space-y-3">
-        <h4 class="font-display text-xl text-lassNavy border-b border-slate-300 pb-1">Marcos da Linha do Tempo</h4>
-        <div id="drawer-timeline-items" class="space-y-3"></div>
-        <button onclick="addTimelineItem()" class="w-full bg-lassYellow text-lassNavy font-monoText text-xs font-bold py-1.5 rounded border border-lassNavy">
-          + Adicionar Novo Marco
-        </button>
-      </div>
-
-      <!-- TAB EMPRESAS -->
-      <div id="tab-companies" class="drawer-tab-pane hidden space-y-3">
-        <h4 class="font-display text-xl text-lassNavy border-b border-slate-300 pb-1">Curiosidades das 6 Empresas</h4>
-        <div id="drawer-companies-items" class="space-y-3"></div>
-      </div>
-
-      <!-- TAB EQUIPE / ANIVERSARIANTES -->
-      <div id="tab-bday" class="drawer-tab-pane hidden space-y-3">
-        <h4 class="font-display text-xl text-lassNavy border-b border-slate-300 pb-1">Aniversariantes</h4>
-        <div id="drawer-bdays-items" class="space-y-2"></div>
-        <button onclick="addBdayItem()" class="w-full bg-lassYellow text-lassNavy font-monoText text-xs font-bold py-1.5 rounded border border-lassNavy">
-          + Adicionar Aniversariante
-        </button>
-      </div>
-
-      <!-- TAB RADAR AGRO -->
-      <div id="tab-radar" class="drawer-tab-pane hidden space-y-3">
-        <h4 class="font-display text-xl text-lassNavy border-b border-slate-300 pb-1">Notícias do Radar</h4>
-        <div id="drawer-radar-items" class="space-y-3"></div>
-      </div>
-
-      <!-- TAB VHS / MÍDIA -->
-      <div id="tab-vhs" class="drawer-tab-pane hidden space-y-3">
-        <h4 class="font-display text-xl text-lassNavy border-b border-slate-300 pb-1">Vídeo VHS de Bastidores</h4>
-        <div>
-          <label class="block font-bold text-slate-700">Título do Vídeo:</label>
-          <input type="text" id="vhs-input-title" onchange="updateVhsData()" class="w-full border p-1 rounded font-monoText text-xs">
-        </div>
-        <div>
-          <label class="block font-bold text-slate-700">Subtítulo / Descrição:</label>
-          <input type="text" id="vhs-input-sub" onchange="updateVhsData()" class="w-full border p-1 rounded font-monoText text-xs">
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Drawer Footer -->
-    <div class="p-3 bg-slate-200 border-t border-slate-300 flex justify-between items-center">
-      <span class="font-monoText text-[10px] text-slate-600">Alterações são salvas em tempo real</span>
-      <button onclick="toggleDrawer()" class="bg-lassNavy text-white font-monoText text-xs font-bold px-4 py-1.5 rounded">
-        FECHAR
-      </button>
-    </div>
-  </div>
-
-
-  <!-- JAVASCRIPT SYSTEM ENGINE -->
+  <!-- JAVASCRIPT LOGIC -->
   <script>
-    // DEFAULT DATA STRUCTURE (FOR INITIAL LAUNCH OR RESET)
-    const DEFAULT_DATA = {
-      timeline: [
-        { ano: "[ANO 1]", titulo: "A SEMENTE INICIAL", desc: "[HISTÓRICO: Descrição do início dos trabalhos, primeiro escritório ou oficina original do Grupo LASS.]", photoLbl: "[FOTO HISTÓRICA / ARQUIVO]" },
-        { ano: "[ANO 2]", titulo: "EXPANSÃO & PEÇAS", desc: "[HISTÓRICO: Nascimento das marcas de suporte, fornecimento de peças e serviços especializados.]", photoLbl: "[FOTO SS PARTS / LASS MÁQUINAS]" },
-        { ano: "[ANO 3]", titulo: "FORÇA NO AGRO", desc: "[HISTÓRICO: Consolidação da presença no setor agrícola regional com a Terrazul Tratores e Lagross.]", photoLbl: "[FOTO TERRAZUL / LAGROSS]" },
-        { ano: "2026", titulo: "GRUPO UNIFICADO", desc: "Chegamos a 2026 integrando SS Parts, LASS Máquinas, Terrazul, Lagross, SSMAC e Movilass sob o mesmo propósito.", photoLbl: "[FOTO HOJE / TIME REUNIDO]" }
-      ],
-      companies: [
-        { id: "ssparts", name: "SS PARTS", desc: "Peças & Componentes de Alta Performance", cur: "[CURIOSIDADE SS PARTS: Exemplo de volume de peças em estoque ou atendimento expresso para o campo.]", borderClr: "border-t-lassNavy", bgBack: "bg-lassNavy", textBack: "text-paperOffWhite" },
-        { id: "lassmaq", name: "LASS MÁQUINAS", desc: "Soluções Pesadas & Equipamentos", cur: "[CURIOSIDADE LASS MÁQUINAS: Detalhes das maiores máquinas comercializadas e suporte de campo.]", borderClr: "border-t-lassYellow", bgBack: "bg-lassYellow", textBack: "text-lassNavy" },
-        { id: "terrazul", name: "TERRAZUL", desc: "Tratores & Tecnologia Agrícola", cur: "[CURIOSIDADE TERRAZUL: Tradição no atendimento a produtores rurais e tecnologia no campo.]", borderClr: "border-t-risoCyan", bgBack: "bg-risoCyan", textBack: "text-lassNavy" },
-        { id: "lagross", name: "LAGROSS", desc: "Concessionária & Implementos", cur: "[CURIOSIDADE LAGROSS: Parcerias de destaque e depoimentos de clientes da região.]", borderClr: "border-t-risoPink", bgBack: "bg-risoPink", textBack: "text-white" },
-        { id: "ssmac", name: "SSMAC", desc: "Engenharia & Soluções Técnicas", cur: "[CURIOSIDADE SSMAC: Foco em segurança, manutenção pesada e especializações técnicas.]", borderClr: "border-t-risoOrange", bgBack: "bg-risoOrange", textBack: "text-white" },
-        { id: "movilass", name: "MOVILASS", desc: "Movimentação & Logística Integrada", cur: "[CURIOSIDADE MOVILASS: Eficiência no transporte de equipamentos e agilidade na entrega.]", borderClr: "border-t-risoGreen", bgBack: "bg-risoGreen", textBack: "text-white" }
-      ],
-      birthdays: [
-        { name: "[NOME]", unit: "SS Parts", date: "[DIA/NOV]" },
-        { name: "[NOME]", unit: "Terrazul", date: "[DIA/NOV]" },
-        { name: "[NOME]", unit: "Lagross", date: "[DIA/DEZ]" },
-        { name: "[NOME]", unit: "SSMAC", date: "[DIA/DEZ]" },
-        { name: "[NOME]", unit: "Movilass", date: "[DIA/DEZ]" },
-        { name: "[NOME]", unit: "LASS Máq", date: "[DIA/DEZ]" }
-      ],
-      newcomers: [
-        { name: "[NOME NOVO COLABORADOR]", role: "[CARGO]", unit: "[UNIDADE]" },
-        { name: "[NOME NOVO COLABORADOR]", role: "[CARGO]", unit: "[UNIDADE]" }
-      ],
-      milestones: [
-        { name: "[NOME COLABORADOR HOMENAGEADO]", years: "[X] ANOS", company: "[EMPRESA]" }
-      ],
-      radar: [
-        { font: "[NOME DA FONTE]", date: "[DATA RECENTE 2026]", title: "[MANCHETE 1: PERSPECTIVAS DA SAFRA E MECANIZAÇÃO]", desc: "[RESUMO DA NOTÍCIA: Relatório aponta alta na demanda por máquinas agrícolas de alta precisão e peças de reposição rápida para o encerramento do ano.]", why: "[EXPLICAÇÃO EM 1 LINHA: Prepara nossas equipes de suporte e estoque para garantir agilidade total no atendimento ao produtor.]", border: "border-l-risoCyan", bg: "bg-risoCyan/20" },
-        { font: "[NOME DA FONTE]", date: "[DATA RECENTE 2026]", title: "[MANCHETE 2: INFRAESTRUTURA E MÁQUINAS PESADAS]", desc: "[RESUMO DA NOTÍCIA: Investimentos em obras regionais impulsionam locação e venda de maquinário de linha amarela.]", why: "[EXPLICAÇÃO EM 1 LINHA: Fortalece o posicionamento da LASS Máquinas e Movilass em grandes obras locais.]", border: "border-l-lassYellow", bg: "bg-lassYellow/30" }
-      ],
-      vhs: {
-        title: "DEPOIMENTO: CLIENTE LAGROSS NO CAMPO",
-        sub: '"Confiança nas máquinas e agilidade no atendimento de peças"',
-        tape: "TAPE: LASS_CLIENTES_2026.VHS"
-      }
-    };
-
-    // SYSTEM STATE
-    let appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    // State management
     let currentPage = 1;
     const totalPages = 11;
-    let isEditing = false;
     let isVhsPlaying = true;
+    let currentVhsChannel = 1;
 
+    // Titles array for index
     const pageTitles = [
       "01. Capa Principal",
       "02. Olá! (Editorial de Abertura)",
@@ -1075,320 +1246,70 @@
       "11. Contracapa & Boas Festas"
     ];
 
-    // INITIALIZATION
+    // Good news pool for randomizer
+    const goodNewsData = [
+      {
+        cat: "HISTÓRIA INSPIRADORA",
+        title: '"PROJETO COMUNITÁRIO REFLORESTA ÁREAS RURAIS COM AJUDA DE VOLUNTÁRIOS"',
+        body: 'Iniciativa regional distribuiu milhares de mudas nativas para produtores rurais reforçarem nascentes e áreas de preservação permanente no interior!'
+      },
+      {
+        cat: "TECNOLOGIA NO CAMPO",
+        title: '"NOVA SAFRA BATE RECORDE DE PRODUTIVIDADE COM RECURSOS DE PRECISÃO"',
+        body: 'Tecnologia embarcada em máquinas e preparo do solo garantiram eficiência recorde para agricultores parceiros do Grupo LASS nesta temporada!'
+      },
+      {
+        cat: "DESTAQUE DA EQUIPE",
+        title: '"EQUIPE DE MANUTENÇÃO CONCLUI TREINAMENTO ESPECIALIZADO COM NOTA MÁXIMA"',
+        body: 'Técnicos das oficinas do grupo receberam certificação avançada em diagnóstico rápido, garantindo menor tempo de máquina parada no campo.'
+      },
+      {
+        cat: "CURIOSIDADE BOAS ENERGIAS",
+        title: '"SABIA QUE SORRIR NO TRABALHO AUMENTA EM 30% A ENERGIA DO TIME?"',
+        body: 'Estudos mostram que ambientes de trabalho descontraídos e bem-humorados promovem maior integração e saúde entre os colaboradores!'
+      }
+    ];
+    let goodNewsIndex = 0;
+
+    // Initialize Page
     window.onload = function() {
-      loadSavedData();
-      renderAllDynamicSections();
-      setupEditableListeners();
       updatePageDisplay();
       buildIndexList();
-
-      // Keyboard Controls
+      
+      // Keyboard Navigation
       document.addEventListener('keydown', function(e) {
-        if (!isEditing && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
-          if (e.key === 'ArrowRight') changePage(1);
-          if (e.key === 'ArrowLeft') changePage(-1);
+        if (e.key === 'ArrowRight') {
+          changePage(1);
+        } else if (e.key === 'ArrowLeft') {
+          changePage(-1);
         }
       });
+
+      // Touch Swipe Gesture
+      let touchStartX = 0;
+      let touchEndX = 0;
+      const magContainer = document.getElementById('magazineContainer');
+
+      magContainer.addEventListener('touchstart', e => {
+        touchStartX = e.changedTouches[0].screenX;
+      }, false);
+
+      magContainer.addEventListener('touchend', e => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+      }, false);
+
+      function handleSwipe() {
+        if (touchEndX < touchStartX - 50) {
+          changePage(1); // Swipe left -> Next Page
+        }
+        if (touchEndX > touchStartX + 50) {
+          changePage(-1); // Swipe right -> Prev Page
+        }
+      }
     };
 
-    // LOCAL STORAGE HANDLING
-    function loadSavedData() {
-      const savedApp = localStorage.getItem('LASS_NEWS_DATA');
-      if (savedApp) {
-        try { appData = JSON.parse(savedApp); } catch(e) {}
-      }
-
-      const savedHtmlTexts = localStorage.getItem('LASS_NEWS_TEXTS');
-      if (savedHtmlTexts) {
-        try {
-          const textMap = JSON.parse(savedHtmlTexts);
-          Object.keys(textMap).forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = textMap[id];
-          });
-        } catch(e) {}
-      }
-    }
-
-    function saveData() {
-      localStorage.setItem('LASS_NEWS_DATA', JSON.stringify(appData));
-      
-      // Save all contenteditable text fields
-      const textMap = {};
-      document.querySelectorAll('.editable-text').forEach(el => {
-        if (el.id) {
-          textMap[el.id] = el.innerHTML;
-        }
-      });
-      localStorage.setItem('LASS_NEWS_TEXTS', JSON.stringify(textMap));
-    }
-
-    function resetToDefaults() {
-      if (confirm('Deseja restaurar as informações originais da edição nº 30? Suas edições locais serão apagadas.')) {
-        localStorage.removeItem('LASS_NEWS_DATA');
-        localStorage.removeItem('LASS_NEWS_TEXTS');
-        location.reload();
-      }
-    }
-
-    // TOGGLE IN-PAGE VISUAL EDITING MODE
-    function toggleEditMode() {
-      isEditing = !isEditing;
-      document.body.classList.toggle('is-editing', isEditing);
-
-      const btnText = document.getElementById('editBtnText');
-      const editBtn = document.getElementById('toggleEditBtn');
-      const banner = document.getElementById('editingBanner');
-
-      if (isEditing) {
-        btnText.innerText = "EDITAR: ON";
-        editBtn.classList.add('bg-risoPink', 'border-white', 'text-white');
-        banner.classList.remove('hidden');
-      } else {
-        btnText.innerText = "EDITAR: OFF";
-        editBtn.classList.remove('bg-risoPink', 'border-white', 'text-white');
-        banner.classList.add('hidden');
-        saveData(); // Auto save on toggle off
-      }
-
-      document.querySelectorAll('.editable-text').forEach(el => {
-        el.contentEditable = isEditing ? "true" : "false";
-      });
-    }
-
-    function setupEditableListeners() {
-      document.querySelectorAll('.editable-text').forEach(el => {
-        el.addEventListener('blur', () => {
-          if (isEditing) saveData();
-        });
-      });
-    }
-
-    // RENDER DYNAMIC SECTIONS
-    function renderAllDynamicSections() {
-      renderTimeline();
-      renderCompanies();
-      renderBirthdays();
-      renderNewcomersAndMilestones();
-      renderRadar();
-      renderVhsData();
-      populateDrawerFields();
-    }
-
-    // 1. Timeline
-    function renderTimeline() {
-      const container = document.getElementById('timeline-container');
-      container.innerHTML = appData.timeline.map((item, idx) => `
-        <div class="min-w-[240px] max-w-[260px] bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] relative flex-shrink-0">
-          <div class="washi-tape absolute -top-3 left-4 w-20 h-5 transform -rotate-3"></div>
-          <span class="bg-lassYellow font-display text-2xl px-2 py-0.5 border border-lassNavy text-lassNavy editable-text" id="tl-year-${idx}">${item.ano}</span>
-          <h5 class="font-display text-xl text-lassNavy mt-3 editable-text" id="tl-title-${idx}">${item.titulo}</h5>
-          <div class="w-full h-24 bg-slate-200 border border-slate-400 my-2 halftone flex items-center justify-center text-xs font-monoText text-slate-600 p-2 text-center editable-text" id="tl-photo-${idx}">${item.photoLbl}</div>
-          <p class="font-sans text-xs text-slate-700 editable-text" id="tl-desc-${idx}">${item.desc}</p>
-        </div>
-      `).join('');
-    }
-
-    // 2. Companies
-    function renderCompanies() {
-      const grid = document.getElementById('companies-grid');
-      grid.innerHTML = appData.companies.map((c, idx) => `
-        <div class="flip-card cursor-pointer h-44 perspective-1000" onclick="this.classList.toggle('flipped')">
-          <div class="transform-style-3d relative w-full h-full duration-500">
-            <div class="absolute inset-0 backface-hidden bg-white border-2 border-lassNavy p-3 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between border-t-8 ${c.borderClr}">
-              <div class="flex justify-between items-start">
-                <span class="font-display text-2xl text-lassNavy">${c.name}</span>
-                <i class="fa-solid fa-rotate text-xs text-slate-400"></i>
-              </div>
-              <p class="font-monoText text-xs text-slate-600 editable-text" id="comp-desc-${idx}">${c.desc}</p>
-              <div class="bg-slate-100 border border-slate-300 text-[11px] p-1.5 font-sans">
-                Clique para ver curiosidade! 🔄
-              </div>
-            </div>
-            <div class="absolute inset-0 backface-hidden rotate-y-180 ${c.bgBack} ${c.textBack} p-3 rounded border-2 border-lassNavy flex flex-col justify-between">
-              <span class="font-monoText text-xs font-bold uppercase">CURIOSIDADE</span>
-              <p class="font-sans text-xs leading-tight font-medium editable-text" id="comp-cur-${idx}">${c.cur}</p>
-              <span class="text-[10px] font-monoText opacity-80">Clique para voltar</span>
-            </div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // 3. Birthdays
-    function renderBirthdays() {
-      const grid = document.getElementById('birthdays-grid');
-      const rots = ['-rotate-2', 'rotate-3', '-rotate-3', 'rotate-1', '-rotate-1', 'rotate-2'];
-      grid.innerHTML = appData.birthdays.map((b, idx) => `
-        <div class="bg-paperOffWhite border border-slate-300 p-2 shadow transform ${rots[idx % rots.length]} hover:rotate-0 transition-transform">
-          <div class="w-full h-16 bg-slate-300 border border-slate-400 halftone flex items-center justify-center font-monoText text-[10px]">
-            [FOTO]
-          </div>
-          <p class="font-hand text-lg text-center font-bold text-lassNavy mt-1 leading-tight editable-text" id="bday-name-${idx}">${b.name}</p>
-          <p class="font-monoText text-[9px] text-center text-slate-500"><span class="editable-text" id="bday-unit-${idx}">${b.unit}</span> • <span class="editable-text" id="bday-date-${idx}">${b.date}</span></p>
-        </div>
-      `).join('');
-    }
-
-    // 4. Newcomers & Milestones
-    function renderNewcomersAndMilestones() {
-      const newList = document.getElementById('newcomers-list');
-      newList.innerHTML = appData.newcomers.map((item, idx) => `
-        <li class="flex justify-between border-b border-slate-200 pb-1">
-          <span><strong class="editable-text" id="new-n-${idx}">${item.name}</strong> — <span class="editable-text" id="new-r-${idx}">${item.role}</span></span>
-          <span class="font-monoText text-[10px] bg-white px-1 border editable-text" id="new-u-${idx}">${item.unit}</span>
-        </li>
-      `).join('');
-
-      const msList = document.getElementById('milestones-list');
-      msList.innerHTML = appData.milestones.map((item, idx) => `
-        <div class="bg-white p-2 border border-lassNavy rounded">
-          <p class="font-bold text-lassNavy editable-text" id="ms-n-${idx}">${item.name}</p>
-          <p class="text-[11px] text-slate-600">Completando <strong class="editable-text" id="ms-y-${idx}">${item.years}</strong> de dedicação na <strong class="editable-text" id="ms-c-${idx}">${item.company}</strong>!</p>
-        </div>
-      `).join('');
-    }
-
-    // 5. Radar
-    function renderRadar() {
-      const grid = document.getElementById('radar-grid');
-      grid.innerHTML = appData.radar.map((item, idx) => `
-        <div class="bg-white border-2 border-lassNavy p-4 rounded shadow-[4px_4px_0px_0px_rgba(10,37,64,1)] flex flex-col justify-between">
-          <div>
-            <div class="flex justify-between items-center text-[10px] font-monoText text-slate-500 border-b border-slate-200 pb-1 mb-2">
-              <span>FONTE: <span class="editable-text" id="rad-f-${idx}">${item.font}</span></span>
-              <span class="editable-text" id="rad-d-${idx}">${item.date}</span>
-            </div>
-            <h4 class="font-display text-2xl text-lassNavy leading-tight mb-2 editable-text" id="rad-t-${idx}">${item.title}</h4>
-            <p class="font-sans text-xs text-slate-700 mb-3 editable-text" id="rad-desc-${idx}">${item.desc}</p>
-          </div>
-          <div class="${item.bg} border-l-4 ${item.border} p-2 rounded-r">
-            <span class="font-monoText text-[10px] font-bold text-lassNavy uppercase block">POR QUE ISSO IMPORTA PRA LASS?</span>
-            <p class="font-sans text-xs font-medium text-slate-900 editable-text" id="rad-w-${idx}">${item.why}</p>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // 6. VHS Video Data
-    function renderVhsData() {
-      if (appData.vhs) {
-        const titleEl = document.getElementById('vhsVideoTitle');
-        const subEl = document.getElementById('vhsVideoSub');
-        const tapeEl = document.getElementById('vhsTapeLabel');
-        if (titleEl) titleEl.innerText = appData.vhs.title;
-        if (subEl) subEl.innerText = appData.vhs.sub;
-        if (tapeEl) tapeEl.innerText = appData.vhs.tape;
-      }
-    }
-
-    // DRAWER / DRAWER TAB MANAGEMENT
-    function toggleDrawer() {
-      const drawer = document.getElementById('editDrawer');
-      drawer.classList.toggle('translate-x-full');
-    }
-
-    function switchDrawerTab(tabId) {
-      document.querySelectorAll('.drawer-tab-pane').forEach(el => el.classList.add('hidden'));
-      document.getElementById(tabId).classList.remove('hidden');
-    }
-
-    function populateDrawerFields() {
-      // Populate timeline drawer list
-      const tlBox = document.getElementById('drawer-timeline-items');
-      tlBox.innerHTML = appData.timeline.map((t, i) => `
-        <div class="p-2 border rounded bg-white space-y-1">
-          <input type="text" value="${t.ano}" onchange="appData.timeline[${i}].ano=this.value; renderTimeline(); saveData();" class="w-full border p-1 font-bold">
-          <input type="text" value="${t.titulo}" onchange="appData.timeline[${i}].titulo=this.value; renderTimeline(); saveData();" class="w-full border p-1">
-          <textarea onchange="appData.timeline[${i}].desc=this.value; renderTimeline(); saveData();" class="w-full border p-1">${t.desc}</textarea>
-        </div>
-      `).join('');
-
-      // Populate companies curiosities drawer list
-      const compBox = document.getElementById('drawer-companies-items');
-      compBox.innerHTML = appData.companies.map((c, i) => `
-        <div class="p-2 border rounded bg-white space-y-1">
-          <span class="font-bold text-lassNavy">${c.name}</span>
-          <textarea onchange="appData.companies[${i}].cur=this.value; renderCompanies(); saveData();" class="w-full border p-1 text-xs">${c.cur}</textarea>
-        </div>
-      `).join('');
-
-      // Populate birthdays drawer list
-      const bdayBox = document.getElementById('drawer-bdays-items');
-      bdayBox.innerHTML = appData.birthdays.map((b, i) => `
-        <div class="flex gap-1 border p-1 rounded bg-white">
-          <input type="text" value="${b.name}" onchange="appData.birthdays[${i}].name=this.value; renderBirthdays(); saveData();" class="w-1/3 border p-1">
-          <input type="text" value="${b.unit}" onchange="appData.birthdays[${i}].unit=this.value; renderBirthdays(); saveData();" class="w-1/3 border p-1">
-          <input type="text" value="${b.date}" onchange="appData.birthdays[${i}].date=this.value; renderBirthdays(); saveData();" class="w-1/3 border p-1">
-        </div>
-      `).join('');
-
-      // Populate VHS fields
-      if (appData.vhs) {
-        document.getElementById('vhs-input-title').value = appData.vhs.title;
-        document.getElementById('vhs-input-sub').value = appData.vhs.sub;
-      }
-    }
-
-    function addTimelineItem() {
-      appData.timeline.push({ ano: "NOVO", titulo: "NOVO MARCO", desc: "Descrição...", photoLbl: "[FOTO]" });
-      renderTimeline();
-      populateDrawerFields();
-      saveData();
-    }
-
-    function addBdayItem() {
-      appData.birthdays.push({ name: "NOVO", unit: "Empresa", date: "01/DEZ" });
-      renderBirthdays();
-      populateDrawerFields();
-      saveData();
-    }
-
-    function updateVhsData() {
-      appData.vhs.title = document.getElementById('vhs-input-title').value;
-      appData.vhs.sub = document.getElementById('vhs-input-sub').value;
-      renderVhsData();
-      saveData();
-    }
-
-    // EXPORT & DOWNLOAD FULL UPDATED HTML FILE
-    function downloadUpdatedHTML() {
-      // First ensure edit mode is turned off for clean output
-      if (isEditing) toggleEditMode();
-
-      // Deep clone current document
-      const docClone = document.documentElement.cloneNode(true);
-
-      // Clean edit mode markers from clone
-      docClone.querySelector('body').classList.remove('is-editing');
-      const editBanner = docClone.querySelector('#editingBanner');
-      if (editBanner) editBanner.classList.add('hidden');
-
-      // Inject saved appData inline into clone script tag
-      const scriptTag = docClone.querySelector('script:not([src])');
-      if (scriptTag) {
-        const injectedScript = `
-          // PRE-BAKED UPDATED DATA
-          window.appData = ${JSON.stringify(appData)};
-        `;
-        // Prepend to main script execution
-      }
-
-      // Generate HTML Blob and download
-      const htmlContent = "<!DOCTYPE html>\n" + docClone.outerHTML;
-      const blob = new Blob([htmlContent], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `LASS_NEWS_Edicao_${appData.vhs ? '30' : 'Atualizada'}.html`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    }
-
-    // PAGE NAVIGATION LOGIC
+    // Change Page function
     function changePage(delta) {
       const newPage = currentPage + delta;
       if (newPage >= 1 && newPage <= totalPages) {
@@ -1396,9 +1317,11 @@
       }
     }
 
+    // Go directly to page
     function goToPage(pageNum) {
       if (pageNum < 1 || pageNum > totalPages) return;
 
+      // Hide current
       const currentEl = document.getElementById(`page-${currentPage}`);
       if (currentEl) {
         currentEl.classList.add('hidden');
@@ -1407,6 +1330,7 @@
 
       currentPage = pageNum;
 
+      // Show new
       const newEl = document.getElementById(`page-${currentPage}`);
       if (newEl) {
         newEl.classList.remove('hidden');
@@ -1415,16 +1339,23 @@
 
       updatePageDisplay();
 
-      if (currentPage === 11) triggerConfetti();
+      // Trigger page specific easter egg or animation
+      if (currentPage === 11) {
+        triggerConfetti();
+      }
     }
 
+    // Update Top Navigation Bar Stats
     function updatePageDisplay() {
       document.getElementById('currentPageDisplay').innerText = String(currentPage).padStart(2, '0');
       document.getElementById('totalPagesDisplay').innerText = String(totalPages).padStart(2, '0');
+      
+      // Toggle button states
       document.getElementById('prevPageBtn').style.opacity = currentPage === 1 ? '0.4' : '1';
       document.getElementById('nextPageBtn').style.opacity = currentPage === totalPages ? '0.4' : '1';
     }
 
+    // Modal Index render
     function buildIndexList() {
       const container = document.getElementById('modalIndexList');
       container.innerHTML = '';
@@ -1442,7 +1373,8 @@
     }
 
     function toggleIndexModal() {
-      document.getElementById('indexModal').classList.toggle('hidden');
+      const modal = document.getElementById('indexModal');
+      modal.classList.toggle('hidden');
     }
 
     function openFeedbackModal() {
@@ -1455,7 +1387,7 @@
 
     function handleFeedbackSubmit(e) {
       e.preventDefault();
-      alert('Sua mensagem foi enviada para a equipe de Comunicação LASS!');
+      alert('Sua mensagem foi enviada com sucesso para a equipe de Comunicação LASS!');
       closeFeedbackModal();
     }
 
@@ -1463,39 +1395,64 @@
       alert('Obrigado por enviar sua sugestão para a Edição #31!');
     }
 
-    // VHS TV Simulation
+    // Toggle clean accessibility reading mode
+    function toggleAccessibleMode() {
+      document.body.classList.toggle('accessible-mode');
+      const btn = document.getElementById('accessModeBtn');
+      if (document.body.classList.contains('accessible-mode')) {
+        btn.classList.add('bg-lassYellow', 'text-lassNavy');
+      } else {
+        btn.classList.remove('bg-lassYellow', 'text-lassNavy');
+      }
+    }
+
+    // Good news draw logic
+    function drawNextGoodNews() {
+      goodNewsIndex = (goodNewsIndex + 1) % goodNewsData.length;
+      const news = goodNewsData[goodNewsIndex];
+
+      document.getElementById('goodNewsCategory').innerText = news.cat;
+      document.getElementById('goodNewsTitle').innerText = news.title;
+      document.getElementById('goodNewsBody').innerText = news.body;
+
+      // Tiny Confetti effect for good vibes
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 30,
+          spread: 60,
+          origin: { y: 0.6 }
+        });
+      }
+    }
+
+    // VHS TV Controls Simulation
     function toggleVhsPlayback() {
       isVhsPlaying = !isVhsPlaying;
       const icon = document.getElementById('vhsPlayIcon');
-      if (icon) {
-        icon.className = isVhsPlaying ? "fa-solid fa-play text-2xl ml-1" : "fa-solid fa-pause text-2xl";
+      if (isVhsPlaying) {
+        icon.className = "fa-solid fa-play text-2xl ml-1";
+      } else {
+        icon.className = "fa-solid fa-pause text-2xl";
       }
     }
 
     function switchVhsChannel() {
-      const display = document.getElementById('vhsChannelDisplay');
-      if (display) display.innerText = display.innerText.includes('01') ? 'CANAL 02' : 'CANAL 01';
+      currentVhsChannel = currentVhsChannel === 1 ? 2 : 1;
+      if (currentVhsChannel === 1) {
+        document.getElementById('vhsVideoTitle').innerText = "DEPOIMENTO: CLIENTE LAGROSS NO CAMPO";
+        document.getElementById('vhsVideoSub').innerText = '"Confiança nas máquinas e agilidade no atendimento de peças"';
+      } else {
+        document.getElementById('vhsVideoTitle').innerText = "BASTIDORES: DIA A DIA NA OFICINA LASS";
+        document.getElementById('vhsVideoSub').innerText = '"Dedicação total para manter o agro e a construção rodando"';
+      }
     }
 
-    // Good News Draw
-    function drawNextGoodNews() {
-      const pool = [
-        { cat: "HISTÓRIA INSPIRADORA", t: '"PROJETO COMUNITÁRIO REFLORESTA ÁREAS RURAIS COM AJUDA DE VOLUNTÁRIOS"', b: "Iniciativa regional distribuiu milhares de mudas nativas para produtores rurais reforçarem nascentes!" },
-        { cat: "TECNOLOGIA NO CAMPO", t: '"NOVA SAFRA BATE RECORDE DE PRODUTIVIDADE COM RECURSOS DE PRECISÃO"', b: "Tecnologia embarcada em máquinas e preparo do solo garantiram eficiência recorde para agricultores parceiros!" },
-        { cat: "DESTAQUE DA EQUIPE", t: '"EQUIPE DE MANUTENÇÃO CONCLUI TREINAMENTO ESPECIALIZADO COM NOTA MÁXIMA"', b: "Técnicos das oficinas do grupo receberam certificação avançada em diagnóstico rápido!" }
-      ];
-      const rand = pool[Math.floor(Math.random() * pool.length)];
-      document.getElementById('goodNewsCategory').innerText = rand.cat;
-      document.getElementById('goodNewsTitle').innerText = rand.t;
-      document.getElementById('goodNewsBody').innerText = rand.b;
-      triggerConfetti();
-    }
-
-    // Confetti Easter Egg
+    // Easter Egg Confetti Trigger
     function triggerConfetti() {
       if (typeof confetti === 'function') {
+        // Yellow & Navy Riso confetti shower
         confetti({
-          particleCount: 80,
+          particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
           colors: ['#0a2540', '#f5b000', '#ff2a75', '#00cbd6']
