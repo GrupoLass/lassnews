@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LASS NEWS — Edição Especial nº 30</title>
+
+  <!-- Google Fonts: Tipografia Mista Zine -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Caveat:wght@600;700&family=Instrument+Serif:ital@0;1&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       1. VARIAVEIS DE DESIGN - RISOGRAFIA & PALETA GRUPO LASS
+       ========================================================================== */
+    :root {
+      --bg-paper: #F8F5EE;
+      --lass-blue: #002B49;
+      --lass-yellow: #FFB800;
+      --riso-cyan: #00A8E8;
+      --riso-pink: #FF2E93;
+      --riso-orange: #FF5A1E;
+      --riso-green: #009B4D;
+      --ink-dark: #1A1A1A;
+      --ink-muted: #555555;
+      --paper-shadow: rgba(0, 43, 73, 0.15);
+      
+      --font-display: 'Bebas Neue', cursive, sans-serif;
+      --font-serif: 'Instrument Serif', serif;
+      --font-mono: 'Space Mono', monospace;
+      --font-hand: 'Caveat', cursive;
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #121212;
+      color: var(--ink-dark);
+      font-family: var(--font-sans);
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Textura de Papel e Ruído Riso */
+    .noise-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.04;
+      background: radial-gradient(circle, #000 10%, transparent 11%) 0 0/12px 12px;
+    }
+
+    /* ==========================================================================
+       2. ESTRUTURA DA REVISTA (BOOK FLIP CONTAINER)
+       ========================================================================== */
+    .magazine-wrapper {
+      width: 100%;
+      max-width: 1300px;
+      height: 90vh;
+      max-height: 850px;
+      margin: 10px auto;
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      perspective: 2000px;
+    }
+
+    .book-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      background: var(--bg-paper);
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5), 0 0 0 8px rgba(255,255,255,0.05);
+      border-radius: 4px;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .page {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      top: 0;
+      background: var(--bg-paper);
+      padding: 40px;
+      overflow-y: auto;
+      display: none;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid rgba(0,0,0,0.08);
+      background-image: 
+        radial-gradient(var(--paper-shadow) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+
+    .page.left-page { left: 0; display: flex; border-right: 2px dashed rgba(0,0,0,0.15); }
+    .page.right-page { right: 0; display: flex; }
+
+    /* Estilo de Folheio Retrô */
+    .page::before {
+      content: "";
+      position: absolute;
+      top: 0; bottom: 0;
+      width: 30px;
+      pointer-events: none;
+    }
+    .left-page::before { right: 0; background: linear-gradient(to left, rgba(0,0,0,0.08), transparent); }
+    .right-page::before { left: 0; background: linear-gradient(to right, rgba(0,0,0,0.08), transparent); }
+
+    /* Mobile Single Page Mode */
+    @media (max-width: 900px) {
+      .magazine-wrapper { height: 95vh; margin: 0; }
+      .page { width: 100% !important; left: 0 !important; right: auto !important; padding: 24px; }
+      .page.left-page, .page.right-page { display: none; }
+      .page.active-mobile { display: flex !important; }
+    }
+
+    /* ==========================================================================
+       3. PAINEL ADM OCULTO & EDICAO VISUAL
+       ========================================================================== */
+    .adm-bar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 50px;
+      background: #000;
+      color: #fff;
+      display: none; /* Oculto por padrão */
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 10000;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      border-bottom: 2px solid var(--lass-yellow);
+    }
+    .adm-bar.visible { display: flex; }
+    
+    .adm-bar .badge-adm {
+      background: var(--riso-pink);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-weight: bold;
+    }
+
+    .adm-btn {
+      background: #222;
+      color: var(--lass-yellow);
+      border: 1px solid var(--lass-yellow);
+      padding: 6px 12px;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-left: 8px;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+    .adm-btn:hover { background: var(--lass-yellow); color: #000; }
+    .adm-btn.active { background: var(--riso-pink); color: #fff; border-color: var(--riso-pink); }
+
+    /* Modal de Senha ADM */
+    .adm-modal {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(5px);
+      z-index: 10001;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .adm-modal-box {
+      background: var(--bg-paper);
+      padding: 30px;
+      border: 3px solid var(--ink-dark);
+      box-shadow: 8px 8px 0 var(--ink-dark);
+      max-width: 360px;
+      width: 90%;
+      text-align: center;
+    }
+    .adm-modal-box h3 { font-family: var(--font-display); font-size: 28px; margin-bottom: 10px; }
+    .adm-modal-box input {
+      width: 100%; padding: 10px; margin: 15px 0;
+      border: 2px solid var(--ink-dark);
+      font-family: var(--font-mono); font-size: 16px; text-align: center;
+    }
+
+    /* Destaques do Modo Edição */
+    body.editing-active [contenteditable="true"] {
+      outline: 2px dashed var(--riso-pink) !important;
+      background: rgba(255, 46, 147, 0.05);
+      cursor: text;
+    }
+
+    /* Drawer de Edição de Listas */
+    .adm-drawer {
+      position: fixed;
+      right: -400px; top: 50px; bottom: 0;
+      width: 380px;
+      background: #1A1A1A;
+      color: #FFF;
+      z-index: 9998;
+      transition: right 0.3s ease;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: -5px 0 20px rgba(0,0,0,0.5);
+      font-family: var(--font-sans);
+    }
+    .adm-drawer.open { right: 0; }
+    .adm-drawer h3 { font-family: var(--font-display); font-size: 24px; color: var(--lass-yellow); margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 8px; }
+    .adm-drawer label { font-size: 12px; font-family: var(--font-mono); color: #AAA; display: block; margin-top: 10px; }
+    .adm-drawer input, .adm-drawer textarea {
+      width: 100%; padding: 8px; background: #222; border: 1px solid #444; color: #FFF; font-family: var(--font-sans); font-size: 13px; margin-top: 4px;
+    }
+
+    /* ==========================================================================
+       4. COMPONENTES VISUAIS ZINE / RISOGRAFIA
+       ========================================================================== */
+    .badge-stamp {
+      display: inline-block;
+      padding: 6px 14px;
+      background: var(--lass-yellow);
+      color: var(--ink-dark);
+      font-family: var(--font-display);
+      font-size: 18px;
+      letter-spacing: 1px;
+      transform: rotate(-3deg);
+      border: 2px solid var(--ink-dark);
+      box-shadow: 3px 3px 0 var(--ink-dark);
+    }
+
+    .polaroid {
+      background: #FFF;
+      padding: 12px 12px 24px 12px;
+      border: 1px solid #DDD;
+      box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+      transform: rotate(1.5deg);
+      position: relative;
+    }
+    .polaroid img { width: 100%; height: 180px; object-fit: cover; filter: grayscale(20%) contrast(110%); }
+    .polaroid-caption { font-family: var(--font-hand); font-size: 20px; text-align: center; margin-top: 8px; color: #333; }
+
+    .tape {
+      position: absolute; width: 80px; height: 24px;
+      background: rgba(240, 230, 200, 0.7);
+      transform: rotate(-12deg); top: -10px; left: 30%;
+      border-left: 2px dashed rgba(0,0,0,0.1); border-right: 2px dashed rgba(0,0,0,0.1);
+      pointer-events: none;
+    }
+
+    /* Flip Card 3D para Empresas */
+    .flip-card { background-color: transparent; width: 100%; height: 220px; perspective: 1000px; margin-bottom: 15px; cursor: pointer; }
+    .flip-card-inner { position: relative; width: 100%; height: 100%; text-align: center; transition: transform 0.6s; transform-style: preserve-3d; }
+    .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+    .flip-card-front, .flip-card-back {
+      position: absolute; width: 100%; height: 100%; backface-visibility: hidden;
+      border: 2px solid var(--ink-dark); padding: 15px; display: flex; flex-direction: column; justify-content: center; align-items: center;
+      box-shadow: 4px 4px 0 var(--ink-dark);
+    }
+    .flip-card-front { background: #FFF; }
+    .flip-card-back { background: var(--lass-blue); color: #FFF; transform: rotateY(180deg); text-align: left; }
+
+    /* Player VHS Retrô */
+    .vhs-container {
+      background: #000; color: #0F0; border: 4px solid #333; padding: 15px;
+      font-family: var(--font-mono); position: relative; overflow: hidden;
+      box-shadow: 6px 6px 0 var(--ink-dark);
+    }
+    .vhs-header { display: flex; justify-content: space-between; font-size: 12px; color: var(--lass-yellow); margin-bottom: 10px; }
+    .vhs-screen { width: 100%; height: 200px; background: #111; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #333; }
+
+    /* Navegação Inferior */
+    .nav-controls {
+      position: fixed; bottom: 15px; z-index: 9990;
+      display: flex; gap: 15px; background: #FFF; padding: 8px 16px;
+      border: 2px solid var(--ink-dark); box-shadow: 4px 4px 0 var(--ink-dark);
+      border-radius: 40px; align-items: center;
+    }
+    .nav-btn {
+      background: none; border: none; font-family: var(--font-display); font-size: 22px; cursor: pointer; padding: 0 10px; color: var(--ink-dark);
+    }
+    .nav-btn:hover { color: var(--riso-pink); }
+    .page-indicator { font-family: var(--font-mono); font-size: 13px; border-left: 1px solid #CCC; border-right: 1px solid #CCC; padding: 0 12px; }
+  </style>
+</head>
+<body>
+
+  <div class="noise-overlay"></div>
+
+  <!-- BARRINHA ADM OCULTA -->
+  <div class="adm-bar" id="admBar">
+    <div>
+      <span class="badge-adm">MODO ADM</span>
+      <span style="margin-left: 10px; color: #CCC;" id="admStatus">Edição Protegida</span>
+    </div>
+    <div>
+      <button class="adm-btn" id="btnToggleEdit" onclick="toggleEditMode()">✏️ EDITAR: OFF</button>
+      <button class="adm-btn" onclick="toggleDrawer()">📋 PAINEL DE DADOS</button>
+      <button class="adm-btn" style="color: var(--riso-green); border-color: var(--riso-green);" onclick="downloadStandaloneHTML()">💾 BAIXAR REVISTA (.HTML)</button>
+      <button class="adm-btn" style="color: #FF5A1E; border-color: #FF5A1E;" onclick="lockADM()">🔒 SAIR</button>
+    </div>
+  </div>
+
+  <!-- MODAL DE SENHA ADM -->
+  <div class="adm-modal" id="admModal">
+    <div class="adm-modal-box">
+      <h3>ACESSO DE EDIÇÃO</h3>
+      <p style="font-size: 13px; color: #666;">Digite a senha de administrador para gerenciar e editar o LASS News:</p>
+      <input type="password" id="admPasswordInput" placeholder="Senha ADM" onkeyup="if(event.key==='Enter') verifyPassword()">
+      <div>
+        <button class="badge-stamp" style="cursor: pointer;" onclick="verifyPassword()">ENTRAR</button>
+        <button class="adm-btn" style="margin-top: 10px;" onclick="closeModal()">CANCELAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DRAWER LATERAL DE EDICAO DE LISTAS -->
+  <div class="adm-drawer" id="admDrawer">
+    <h3>GERENCIAR CONTEÚDOS</h3>
+    
+    <label>EDIÇÃO E ANO</label>
+    <input type="text" id="inputEdNum" value="30" onchange="updateSystemData()">
+    <input type="text" id="inputEdMeses" value="Nov / Dez 2026" onchange="updateSystemData()">
+
+    <label>VÍDEO DOS BASTIDORES (URL EMBED)</label>
+    <input type="text" id="inputVhsUrl" value="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" onchange="updateSystemData()">
+
+    <label>CONTADORES DE CRESCIMENTO</label>
+    <input type="number" id="inputAnos" value="35" onchange="updateSystemData()"> Anos de História
+    <input type="number" id="inputColab" value="450" onchange="updateSystemData()"> Colaboradores
+
+    <p style="font-size: 11px; color: #888; margin-top: 20px;">* Dica: Textos normais de cabeçalho e parágrafos podem ser editados direto nas páginas da revista quando o "Modo Editar" estiver ligado.</p>
+  </div>
+
+  <!-- CONTAINER PRINCIPAL DA REVISTA -->
+  <div class="magazine-wrapper">
+    <div class="book-container">
+
+      <!-- PÁGINA 1: CAPA -->
+      <div class="page left-page active-mobile" id="p1" style="justify-content: center; text-align: center; background: var(--bg-paper);">
+        <div class="tape"></div>
+        <div class="badge-stamp" id="selo-capa" contenteditable="false">Edição nº 30 • Nov/Dez 2026</div>
+        
+        <h1 style="font-family: var(--font-display); font-size: 85px; line-height: 0.9; margin: 25px 0; color: var(--lass-blue);" contenteditable="false" id="txtCapaTitulo">
+          LASS NEWS
+        </h1>
+
+        <div style="font-family: var(--font-serif); font-size: 26px; font-style: italic; color: var(--riso-pink); margin-bottom: 20px;" contenteditable="false" id="txtCapaSub">
+          Edição Especial de Fim de Ano
+        </div>
+
+        <p style="font-family: var(--font-sans); font-size: 15px; color: var(--ink-muted); max-width: 80%; margin: 0 auto;" contenteditable="false" id="txtCapaDesc">
+          Nossa História, Nossas Conquistas e o Futuro das empresas do Grupo LASS.
+        </p>
+
+        <div style="margin-top: 40px; font-family: var(--font-mono); font-size: 12px; color: var(--ink-dark);">
+          ➡️ Clique na seta ou use o teclado (← →) para folhear
+        </div>
+      </div>
+
+      <!-- PÁGINA 2: EDITORIAL (OLÁ!) -->
+      <div class="page right-page active-mobile" id="p2">
+        <div>
+          <span style="font-family: var(--font-mono); font-size: 12px; color: var(--riso-pink);">// EDITORIAL</span>
+          <h2 style="font-family: var(--font-display); font-size: 45px; margin-top: 5px;" contenteditable="false" id="txtEdTitulo">OLÁ, TIME LASS!</h2>
+          
+          <div style="margin-top: 20px; font-size: 15px; line-height: 1.6;" contenteditable="false" id="txtEdCorpo">
+            <p style="margin-bottom: 12px;">Chegamos à <strong>edição nº 30</strong> do LASS NEWS totalmente de cara nova! Pensada para ser lida direto na tela do seu celular ou computador, esta revista celebra a jornada de cada colaborador.</p>
+            <p>Nesta edição especial de fim de ano, olhamos para as nossas origens, reforçamos nossa união e preparamos o terreno para os desafios de 2027.</p>
+          </div>
+        </div>
+
+        <div class="polaroid" style="margin-top: 20px;">
+          <img src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=600&q=80" alt="Equipe LASS">
+          <div class="polaroid-caption" contenteditable="false" id="txtEdLegenda">Gente que faz acontecer! 🩵</div>
+        </div>
+
+        <div style="background: var(--lass-yellow); padding: 12px; border: 2px solid var(--ink-dark); margin-top: 15px; font-size: 13px;">
+          💬 <strong>Quer mandar sua pauta?</strong> Fale com o time de RH ou Marketing da sua unidade!
+        </div>
+      </div>
+
+      <!-- PÁGINA 3: NOSSA HISTÓRIA -->
+      <div class="page left-page" id="p3">
+        <div>
+          <span style="font-family: var(--font-mono); font-size: 12px; color: var(--riso-cyan);">// MEMÓRIA & EVOLUÇÃO</span>
+          <h2 style="font-family: var(--font-display); font-size: 42px;" contenteditable="false" id="txtHistTitulo">NOSSA HISTÓRIA</h2>
+
+          <div style="display: flex; gap: 15px; margin: 20px 0;">
+            <div style="flex: 1; background: #FFF; padding: 15px; border: 2px solid var(--ink-dark); box-shadow: 3px 3px 0 var(--ink-dark); text-align: center;">
+              <div style="font-family: var(--font-display); font-size: 38px; color: var(--riso-pink);" id="valAnos">35</div>
+              <div style="font-family: var(--font-mono); font-size: 10px;">ANOS DE HISTÓRIA</div>
+            </div>
+            <div style="flex: 1; background: #FFF; padding: 15px; border: 2px solid var(--ink-dark); box-shadow: 3px 3px 0 var(--ink-dark); text-align: center;">
+              <div style="font-family: var(--font-display); font-size: 38px; color: var(--lass-blue);" id="valColab">450+</div>
+              <div style="font-family: var(--font-mono); font-size: 10px;">COLABORADORES</div>
+            </div>
+          </div>
+
+          <div style="border-left: 3px dashed var(--ink-dark); padding-left: 15px; margin-top: 20px;">
+            <div style="margin-bottom: 20px;">
+              <span class="badge-stamp" style="font-size: 12px; padding: 2px 6px;">[ANO DE FUNDAÇÃO]</span>
+              <h4 style="font-family: var(--font-sans); font-weight: 800; margin-top: 4px;" contenteditable="false" id="txtMarco1Tit">O Começo de Tudo</h4>
+              <p style="font-size: 13px; color: #555;" contenteditable="false" id="txtMarco1Desc">Início das atividades focadas em peças e atendimento regional com princípios de compromisso e parceria.</p>
+            </div>
+            <div>
+              <span class="badge-stamp" style="font-size: 12px; padding: 2px 6px; background: var(--riso-cyan); color: white;">2026</span>
+              <h4 style="font-family: var(--font-sans); font-weight: 800; margin-top: 4px;" contenteditable="false" id="txtMarco2Tit">Consolidação do Grupo</h4>
+              <p style="font-size: 13px; color: #555;" contenteditable="false" id="txtMarco2Desc">União das 6 marcas especializadas atendendo agro, construção e logística com excelência.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PÁGINA 4: EMPRESAS DO GRUPO -->
+      <div class="page right-page" id="p4">
+        <div>
+          <span style="font-family: var(--font-mono); font-size: 12px; color: var(--riso-orange);">// ECOSSISTEMA LASS</span>
+          <h2 style="font-family: var(--font-display); font-size: 42px; margin-bottom: 15px;">AS 6 EMPRESAS</h2>
+
+          <!-- Card Flip SS PARTS -->
+          <div class="flip-card" onclick="this.classList.toggle('flipped')">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">
+                <h3 style="font-family: var(--font-display); font-size: 28px; color: var(--riso-pink);">SS PARTS</h3>
+                <p style="font-size: 12px; font-family: var(--font-mono); color: #666;">Clique para virar a carta 🔄</p>
+              </div>
+              <div class="flip-card-back">
+                <h4 style="font-family: var(--font-sans); font-size: 14px; color: var(--lass-yellow);">O QUE FAZ:</h4>
+                <p style="font-size: 12px;" contenteditable="false" id="txtEmpSsFaz">Especialista em reposição de peças multimarcas pesadas e linha amarela.</p>
+                <small style="margin-top: 10px; font-style: italic;" contenteditable="false" id="txtEmpSsCur">💡 Curiosidade: Mais de 15 mil itens em estoque.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card Flip LASS MÁQUINAS -->
+          <div class="flip-card" onclick="this.classList.toggle('flipped')">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">
+                <h3 style="font-family: var(--font-display); font-size: 28px; color: var(--lass-blue);">LASS MÁQUINAS</h3>
+                <p style="font-size: 12px; font-family: var(--font-mono); color: #666;">Clique para virar a carta 🔄</p>
+              </div>
+              <div class="flip-card-back" style="background: var(--riso-orange);">
+                <h4 style="font-family: var(--font-sans); font-size: 14px; color: white;">O QUE FAZ:</h4>
+                <p style="font-size: 12px;" contenteditable="false" id="txtEmpLassFaz">Venda e locação de maquinário pesado para construção e infraestrutura.</p>
+                <small style="margin-top: 10px; font-style: italic;" contenteditable="false" id="txtEmpLassCur">💡 Curiosidade: Frota 100% conectada via telemetria.</small>
+              </div>
+            </div>
+          </div>
+
+          <p style="font-size: 11px; font-family: var(--font-mono); text-align: center; color: #888;">+ TERRAZUL, LAGROSS, SSMAC e MOVILASS</p>
+        </div>
+      </div>
+
+      <!-- PÁGINA 5: BASTIDORES VHS -->
+      <div class="page left-page" id="p5">
+        <div>
+          <span style="font-family: var(--font-mono); font-size: 12px; color: var(--riso-pink);">// MÍDIA & BASTIDORES</span>
+          <h2 style="font-family: var(--font-display); font-size: 42px;" contenteditable="false" id="txtVhsTit">TV LASS RETRÔ</h2>
+
+          <div class="vhs-container" style="margin-top: 15px;">
+            <div class="vhs-header">
+              <span>PLAY ▶ [VHS-REC]</span>
+              <span>AUTO-TRACKING</span>
+            </div>
+            <div class="vhs-screen">
+              <iframe id="vhsIframe" width="100%" height="100%" src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" frameborder="0" allowfullscreen style="border:none;"></iframe>
+            </div>
+            <div style="margin-top: 10px; font-size: 11px; color: #FFF;" contenteditable="false" id="txtVhsLeg">
+              Depoimento de Cliente Lagross — Safra 2026
+            </div>
+          </div>
+
+          <p style="font-size: 13px; margin-top: 20px; font-family: var(--font-serif); font-style: italic;" contenteditable="false" id="txtVhsQuote">
+            "Acompanhar de perto a gravação com nossos clientes mostra a força que o trabalho de cada um de vocês tem no campo."
+          </p>
+        </div>
+      </div>
+
+      <!-- PÁGINA 6: CONTRACAPA / MENSAGEM FINAL -->
+      <div class="page right-page" id="p6" style="justify-content: center; text-align: center; background: var(--lass-blue); color: #FFF;">
+        <div class="badge-stamp" style="background: var(--riso-pink); color: #FFF;">ATÉ 2027!</div>
+
+        <h2 style="font-family: var(--font-display); font-size: 60px; margin: 20px 0; color: var(--lass-yellow);" contenteditable="false" id="txtFimTit">
+          Obrigado, Time!
+        </h2>
+
+        <p style="font-family: var(--font-sans); font-size: 16px; max-width: 85%; margin: 0 auto; line-height: 1.6;" contenteditable="false" id="txtFimDesc">
+          Que 2027 venha carregado de novas conquistas, saúde e muito orgulho da nossa trajetória juntos no Grupo LASS!
+        </p>
+
+        <button class="badge-stamp" style="margin-top: 30px; cursor: pointer; background: #FFF; color: var(--ink-dark);" onclick="triggerConfetti()">
+          🎉 CELEBRAR FIM DE ANO
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- NAVEGAÇÃO DA REVISTA -->
+  <div class="nav-controls">
+    <button class="nav-btn" onclick="prevPage()">← ANTERIOR</button>
+    <span class="page-indicator" id="pageNumber">Pág. 1 / 6</span>
+    <button class="nav-btn" onclick="nextPage()">PRÓXIMA →</button>
+  </div>
+
+  <!-- SCRIPTS DA APLICAÇÃO -->
+  <script>
+    // ==========================================================================
+    // ESTADO E CONFIGURAÇÃO DA REVISTA
+    // ==========================================================================
+    let currentPage = 1;
+    const totalPages = 6;
+    let isEditMode = false;
+    let isADMUnlocked = false;
+    const ADM_PASSWORD_HASH = "lass2026"; // Senha padrão para abrir o modo ADM
+
+    // ==========================================================================
+    // SISTEMA DE NAVEGAÇÃO DAS PÁGINAS
+    // ==========================================================================
+    function updatePagination() {
+      const isMobile = window.innerWidth <= 900;
+
+      if (isMobile) {
+        document.querySelectorAll('.page').forEach((p, idx) => {
+          p.classList.remove('active-mobile');
+          if (idx + 1 === currentPage) p.classList.add('active-mobile');
+        });
+        document.getElementById('pageNumber').innerText = `Pág. ${currentPage} / ${totalPages}`;
+      } else {
+        // Desktop: mostra 2 páginas simultâneas
+        document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+        
+        let leftIdx = currentPage;
+        if (leftIdx % 2 === 0) leftIdx--; // Mantém paridade de livro
+        
+        const leftPage = document.getElementById(`p${leftIdx}`);
+        const rightPage = document.getElementById(`p${leftIdx + 1}`);
+
+        if (leftPage) { leftPage.style.display = 'flex'; leftPage.className = 'page left-page'; }
+        if (rightPage) { rightPage.style.display = 'flex'; rightPage.className = 'page right-page'; }
+
+        document.getElementById('pageNumber').innerText = `Pág. ${leftIdx}-${Math.min(leftIdx + 1, totalPages)} / ${totalPages}`;
+      }
+    }
+
+    function nextPage() {
+      const step = (window.innerWidth <= 900) ? 1 : 2;
+      if (currentPage + step <= totalPages) {
+        currentPage += step;
+        updatePagination();
+      }
+    }
+
+    function prevPage() {
+      const step = (window.innerWidth <= 900) ? 1 : 2;
+      if (currentPage - step >= 1) {
+        currentPage -= step;
+        updatePagination();
+      }
+    }
+
+    // Teclas ← e →
+    document.addEventListener('keydown', (e) => {
+      if (e.target.isContentEditable || e.target.tagName === 'INPUT') return;
+      if (e.key === 'ArrowRight') nextPage();
+      if (e.key === 'ArrowLeft') prevPage();
+
+      // ATALHO SECRETO ADM: Ctrl + Shift + E
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        openPasswordModal();
+      }
+    });
+
+    // ==========================================================================
+    // SISTEMA DE SEGURANÇA E MODO ADM OCULTO
+    // ==========================================================================
+    // Verifica parâmetro na URL (?adm=1)
+    window.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('adm')) {
+        openPasswordModal();
+      }
+      loadSavedContent();
+      updatePagination();
+    });
+
+    function openPasswordModal() {
+      if (isADMUnlocked) {
+        document.getElementById('admBar').classList.add('visible');
+        return;
+      }
+      document.getElementById('admModal').style.display = 'flex';
+      document.getElementById('admPasswordInput').focus();
+    }
+
+    function closeModal() {
+      document.getElementById('admModal').style.display = 'none';
+    }
+
+    function verifyPassword() {
+      const pwd = document.getElementById('admPasswordInput').value;
+      if (pwd === ADM_PASSWORD_HASH) {
+        isADMUnlocked = true;
+        closeModal();
+        document.getElementById('admBar').classList.add('visible');
+        alert('🔓 Modo ADM Ativado! Use Ctrl+Shift+E a qualquer momento para reabrir.');
+      } else {
+        alert('❌ Senha incorreta!');
+      }
+    }
+
+    function lockADM() {
+      isADMUnlocked = false;
+      if (isEditMode) toggleEditMode();
+      document.getElementById('admBar').classList.remove('visible');
+      document.getElementById('admDrawer').classList.remove('open');
+    }
+
+    // ==========================================================================
+    // SISTEMA DE EDIÇÃO VISUAL E SALVAMENTO
+    // ==========================================================================
+    function toggleEditMode() {
+      if (!isADMUnlocked) return;
+      isEditMode = !isEditMode;
+      document.body.classList.toggle('editing-active', isEditMode);
+      
+      const btn = document.getElementById('btnToggleEdit');
+      btn.classList.toggle('active', isEditMode);
+      btn.innerText = isEditMode ? '✏️ EDITAR: ON' : '✏️ EDITAR: OFF';
+
+      document.querySelectorAll('[contenteditable]').forEach(el => {
+        el.contentEditable = isEditMode ? "true" : "false";
+      });
+    }
+
+    function toggleDrawer() {
+      if (!isADMUnlocked) return;
+      document.getElementById('admDrawer').classList.toggle('open');
+    }
+
+    // Atualiza contadores e links via painel lateral
+    function updateSystemData() {
+      const edNum = document.getElementById('inputEdNum').value;
+      const edMeses = document.getElementById('inputEdMeses').value;
+      document.getElementById('selo-capa').innerText = `Edição nº ${edNum} • ${edMeses}`;
+
+      document.getElementById('valAnos').innerText = document.getElementById('inputAnos').value;
+      document.getElementById('valColab').innerText = document.getElementById('inputColab').value + '+';
+
+      document.getElementById('vhsIframe').src = document.getElementById('inputVhsUrl').value;
+      
+      saveContentLocally();
+    }
+
+    // Auto-Save no LocalStorage ao digitar
+    document.addEventListener('input', (e) => {
+      if (e.target.isContentEditable) {
+        saveContentLocally();
+      }
+    });
+
+    function saveContentLocally() {
+      const dataToSave = {};
+      document.querySelectorAll('[id]').forEach(el => {
+        if (el.isContentEditable) {
+          dataToSave[el.id] = el.innerHTML;
+        }
+      });
+      localStorage.setItem('LASS_NEWS_SAVED_DATA', JSON.stringify(dataToSave));
+    }
+
+    function loadSavedContent() {
+      const saved = localStorage.getItem('LASS_NEWS_SAVED_DATA');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        Object.keys(parsed).forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = parsed[id];
+        });
+      }
+    }
+
+    // ==========================================================================
+    // DOWNLOAD DA REVISTA LIMPA (.HTML STANDALONE)
+    // ==========================================================================
+    function downloadStandaloneHTML() {
+      // Garante que o modo de edição esteja desligado antes de gerar a cópia
+      const wasEditing = isEditMode;
+      if (isEditMode) toggleEditMode();
+
+      // Desativa o painel ADM no código clonado para o leitor final
+      const cloneDoc = document.documentElement.cloneNode(true);
+      
+      // Remove a barra ADM e modal do código final gerado
+      const admBarEl = cloneDoc.querySelector('#admBar');
+      const admModalEl = cloneDoc.querySelector('#admModal');
+      const admDrawerEl = cloneDoc.querySelector('#admDrawer');
+      if (admBarEl) admBarEl.remove();
+      if (admModalEl) admModalEl.remove();
+      if (admDrawerEl) admDrawerEl.remove();
+
+      // Garante que nenhum elemento fique com contenteditable true
+      cloneDoc.querySelectorAll('[contenteditable]').forEach(el => {
+        el.removeAttribute('contenteditable');
+      });
+
+      const blob = new Blob(['<!DOCTYPE html>\n' + cloneDoc.outerHTML], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `LASS_NEWS_Edicao_30_Final.html`;
+      a.click();
+
+      if (wasEditing) toggleEditMode();
+      alert('🎉 Arquivo final gerado com sucesso! Este é o arquivo que você pode publicar para todos os colaboradores.');
+    }
+
+    // Easter Egg: Confetes de Fim de Ano
+    function triggerConfetti() {
+      for(let i = 0; i < 50; i++) {
+        const conf = document.createElement('div');
+        conf.style.position = 'fixed';
+        conf.style.left = Math.random() * 100 + 'vw';
+        conf.style.top = '-10px';
+        conf.style.width = '10px';
+        conf.style.height = '10px';
+        conf.style.backgroundColor = ['#FFB800', '#FF2E93', '#00A8E8', '#009B4D'][Math.floor(Math.random()*4)];
+        conf.style.zIndex = '9999';
+        conf.style.transition = 'transform 2.5s ease-out, opacity 2.5s';
+        document.body.appendChild(conf);
+
+        setTimeout(() => {
+          conf.style.transform = `translateY(${window.innerHeight}px) rotate(${Math.random()*360}deg)`;
+          conf.style.opacity = '0';
+        }, 50);
+
+        setTimeout(() => conf.remove(), 2600);
+      }
+    }
+  </script>
+</body>
+</html>
